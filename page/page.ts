@@ -52,7 +52,7 @@ function addField(field: string, index: number) {
   const input = row.querySelector("input")!
   const reveal = row.querySelector("button")!
 
-  label.textContent = field[0]!.toUpperCase() + field.slice(1)
+  label.textContent = field === "totp" ? "2FA setup key" : field[0]!.toUpperCase() + field.slice(1)
   label.htmlFor = input.id = `field-${index}`
 
   if (/^e-?mail$/i.test(field)) Object.assign(input, { type: "email", autocomplete: "username" })

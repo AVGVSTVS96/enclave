@@ -4,6 +4,13 @@
   "description": "Ask a person for a secret through a one-time link. It's encrypted in their browser, and only your agent can open it.",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "types": "./dist/types/index.d.ts",
   "bin": {
     "psst": "dist/psst.js"
   },
@@ -16,7 +23,7 @@
   "scripts": {
     "dev": "node scripts/page.ts && convex dev",
     "deploy": "node scripts/page.ts && convex deploy",
-    "build": "esbuild src/cli.ts --bundle --platform=node --format=esm --target=node22 --outfile=dist/psst.js",
+    "build": "node scripts/build.ts",
     "prepack": "npm run build",
     "check": "node scripts/page.ts && tsc -p . && node --test 'test/*.test.ts'"
   },
