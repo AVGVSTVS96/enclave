@@ -35,5 +35,6 @@
     "esbuild": "0.27.0",
     "typescript": "^7.0.2",
     "zod": "^4.6.5"
-  }
+  },
+  "mcpName": "io.github.avgvstvs96/psst"
 }

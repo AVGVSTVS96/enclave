@@ -1,0 +1,10 @@
+{
+  "name": "psst",
+  "version": "0.1.0",
+  "description": "Ask a person for a secret through a one-time encrypted link, keep it in your own vault, and use it without seeing it",
+  "author": { "name": "Bassim Shahidy", "url": "https://github.com/AVGVSTVS96" },
+  "homepage": "https://github.com/AVGVSTVS96/psst",
+  "repository": "https://github.com/AVGVSTVS96/psst",
+  "license": "MIT",
+  "keywords": ["secrets", "passwords", "vault", "encryption", "mcp"]
+}
