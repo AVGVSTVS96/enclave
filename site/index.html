@@ -17,139 +17,226 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/instrument-sans.woff2" as="font" type="font/woff2" crossorigin />
+    <script>
+      document.documentElement.dataset.scheme = localStorage.scheme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    </script>
     <link rel="stylesheet" href="/src/style.css" />
     <script type="module" src="/src/main.ts"></script>
   </head>
   <body>
-    <header class="top wrap">
-      <a class="wordmark" href="/" aria-label="enclave">
-        <svg class="mark" viewBox="-2.78 -79.04 98.37 98.37" aria-hidden="true"><clipPath id="bar"><rect y="-36" width="92.8" height="46" rx="6" /></clipPath><rect y="-36" width="92.8" height="46" rx="6" class="hl" /><path class="ink" d="M35 0L22 0L32-72L45-72L35 0ZM60.80 0L47.80 0L57.80-72L70.80-72L60.80 0ZM15.50-42.50L15.50-54.70L79.80-54.70L79.80-42.50L15.50-42.50ZM13-18.30L13-30.50L77.30-30.50L77.30-18.30L13-18.30Z" /><path class="on-hl" clip-path="url(#bar)" d="M35 0L22 0L32-72L45-72L35 0ZM60.80 0L47.80 0L57.80-72L70.80-72L60.80 0ZM15.50-42.50L15.50-54.70L79.80-54.70L79.80-42.50L15.50-42.50ZM13-18.30L13-30.50L77.30-30.50L77.30-18.30L13-18.30Z" /></svg>
-        enclave
-      </a>
-      <a href="https://github.com/AVGVSTVS96/enclave">GitHub</a>
+    <header class="row">
+      <nav class="frame top">
+        <a class="wordmark" href="/" aria-label="enclave">
+          <svg class="mark" viewBox="-2.78 -79.04 98.37 98.37" aria-hidden="true"><clipPath id="bar"><rect y="-36" width="92.8" height="46" rx="6" /></clipPath><rect y="-36" width="92.8" height="46" rx="6" class="hl" /><path class="ink" d="M35 0L22 0L32-72L45-72L35 0ZM60.80 0L47.80 0L57.80-72L70.80-72L60.80 0ZM15.50-42.50L15.50-54.70L79.80-54.70L79.80-42.50L15.50-42.50ZM13-18.30L13-30.50L77.30-30.50L77.30-18.30L13-18.30Z" /><path class="on-hl" clip-path="url(#bar)" d="M35 0L22 0L32-72L45-72L35 0ZM60.80 0L47.80 0L57.80-72L70.80-72L60.80 0ZM15.50-42.50L15.50-54.70L79.80-54.70L79.80-42.50L15.50-42.50ZM13-18.30L13-30.50L77.30-30.50L77.30-18.30L13-18.30Z" /></svg>
+          enclave
+        </a>
+        <div class="links">
+          <a href="#link">How it works</a>
+          <a href="#setup">Set up</a>
+          <a href="#self-host">Self-host</a>
+          <a href="https://github.com/AVGVSTVS96/enclave">GitHub</a>
+          <button class="scheme" type="button" aria-label="Dark mode">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.25" /><path d="M10 2.75a7.25 7.25 0 0 1 0 14.5z" /></svg>
+          </button>
+        </div>
+      </nav>
     </header>
 
     <main>
-      <section class="hero wrap">
-        <div class="say">
-          <h1><span>Your agent needs a password.</span> <span>It sends a <mark>link</mark>.</span></h1>
-          <p class="sub">You type it and tap Send. Only your agent can open it.</p>
-          <button class="command" data-copy="npx skills add AVGVSTVS96/enclave">
-            <code><span class="prompt">$</span> npx skills add AVGVSTVS96/enclave</code>
-            <span class="copied" aria-live="polite">Copy</span>
-          </button>
-          <p class="fine">Works with Claude Code, Codex, Cursor, Gemini CLI and anything that speaks MCP. MIT.</p>
-        </div>
-        <div class="phones">
-          <figure class="phone">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/shots/ledger-dark-ask.webp" />
-              <img src="/shots/ledger-light-ask.webp" width="600" height="1298" alt="The enclave page in the ledger theme: hex is asking for Netflix, with email and password fields and a Send to hex button" />
-            </picture>
-          </figure>
-          <figure class="phone">
-            <picture>
-              <source media="(prefers-color-scheme: dark)" srcset="/shots/field-dark-ask.webp" />
-              <img src="/shots/field-light-ask.webp" width="600" height="1298" alt="The same page in the field theme, on a full blue background" />
-            </picture>
-          </figure>
-        </div>
-      </section>
-
-      <section class="block wrap">
-        <h2>Everything after the # stays on your device.</h2>
-        <p class="line">Browsers never send that part to a server. The key and the question live there, so the relay never learns what was asked.</p>
-        <div class="anatomy">
-          <div class="part">
-            <code>moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg</code>
-            <p><b>The relay</b> sees this: a random slug, and later 304 locked bytes.</p>
+      <section class="row">
+        <div class="frame hero">
+          <div class="say">
+            <h1><span>Your agent needs a password.</span> <span>It sends a <mark>link</mark>.</span></h1>
+            <p class="sub">You type it and tap Send. Only your agent can open it.</p>
+            <button class="command" data-copy="npx skills add AVGVSTVS96/enclave">
+              <code><span class="prompt">$</span> npx skills add AVGVSTVS96/enclave</code><svg class="copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="8" height="8" rx="1.75" /><path d="M10.75 5.25V3.5A1.25 1.25 0 0 0 9.5 2.25h-6A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75" /></svg><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.25 3.25L13 5" /></svg><span class="copied" aria-live="polite"></span>
+            </button>
+            <p class="fine">Works with Claude Code, Codex, Cursor, Gemini CLI and anything that speaks MCP. MIT, and the <a href="https://github.com/AVGVSTVS96/enclave">source is on GitHub</a>.</p>
           </div>
-          <div class="part secret">
-            <code><mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=wOoTp0jZtO8Bu2VcKTu2K7pw8K_MW3QLBJnJVWBwLU8</mark></code>
-            <p><b>Only your browser</b> sees this: who’s asking, what for, and the key that locks it.</p>
+          <div class="phones">
+            <figure class="phone ledger-theme">
+              <div class="screen">
+                <div class="status"><span>9:41</span><svg viewBox="0 0 66 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="4.5" y="5.5" width="3" height="6.5" rx="1" /><rect x="9" y="3" width="3" height="9" rx="1" /><rect x="13.5" y="0.5" width="3" height="11.5" rx="1" /><path d="M29 2.6a10 10 0 0 1 7 2.9l1.2-1.3A11.8 11.8 0 0 0 29 .8a11.8 11.8 0 0 0-8.2 3.4L22 5.5a10 10 0 0 1 7-2.9Zm0 3.7a6.3 6.3 0 0 1 4.4 1.8l1.2-1.3A8.1 8.1 0 0 0 29 4.5a8.1 8.1 0 0 0-5.6 2.3l1.2 1.3A6.3 6.3 0 0 1 29 6.3Zm0 3.7a2.6 2.6 0 0 1 1.7.7L29 12.4l-1.7-1.7A2.6 2.6 0 0 1 29 10Z" /><rect class="battery" x="42.5" y="0.75" width="20" height="10.5" rx="3" /><rect x="44.5" y="2.75" width="14.5" height="6.5" rx="1.5" /><path d="M64 4.25v3.5a1.9 1.9 0 0 0 0-3.5Z" /></svg></div>
+                <div class="shots">
+                  <img class="shot light" src="/shots/hero/ledger-light.webp" width="780" height="1328" alt="The enclave page in the ledger theme: hex is asking for Netflix, with email and password fields and a Send to hex button" />
+                  <img class="shot dark" src="/shots/hero/ledger-dark.webp" width="780" height="1328" alt="" />
+                </div>
+                <div class="safari"><i><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg></i><span>moonlit-lynx-37.convex.site</span><i><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.25" /><circle cx="8" cy="8" r="1.25" /><circle cx="12.5" cy="8" r="1.25" /></svg></i></div>
+              </div>
+              <figcaption>ledger</figcaption>
+            </figure>
+            <figure class="phone field-theme">
+              <div class="screen">
+                <div class="status"><span>9:41</span><svg viewBox="0 0 66 12" aria-hidden="true"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="4.5" y="5.5" width="3" height="6.5" rx="1" /><rect x="9" y="3" width="3" height="9" rx="1" /><rect x="13.5" y="0.5" width="3" height="11.5" rx="1" /><path d="M29 2.6a10 10 0 0 1 7 2.9l1.2-1.3A11.8 11.8 0 0 0 29 .8a11.8 11.8 0 0 0-8.2 3.4L22 5.5a10 10 0 0 1 7-2.9Zm0 3.7a6.3 6.3 0 0 1 4.4 1.8l1.2-1.3A8.1 8.1 0 0 0 29 4.5a8.1 8.1 0 0 0-5.6 2.3l1.2 1.3A6.3 6.3 0 0 1 29 6.3Zm0 3.7a2.6 2.6 0 0 1 1.7.7L29 12.4l-1.7-1.7A2.6 2.6 0 0 1 29 10Z" /><rect class="battery" x="42.5" y="0.75" width="20" height="10.5" rx="3" /><rect x="44.5" y="2.75" width="14.5" height="6.5" rx="1.5" /><path d="M64 4.25v3.5a1.9 1.9 0 0 0 0-3.5Z" /></svg></div>
+                <div class="shots">
+                  <img class="shot light" src="/shots/hero/field-light.webp" width="780" height="1328" alt="The same page in the field theme, on a full blue background" />
+                  <img class="shot dark" src="/shots/hero/field-dark.webp" width="780" height="1328" alt="" />
+                </div>
+                <div class="safari"><i><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" /></svg></i><span>moonlit-lynx-37.convex.site</span><i><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.5" cy="8" r="1.25" /><circle cx="8" cy="8" r="1.25" /><circle cx="12.5" cy="8" r="1.25" /></svg></i></div>
+              </div>
+              <figcaption>field</figcaption>
+            </figure>
           </div>
         </div>
       </section>
 
-      <section class="block wrap ledger-block">
-        <div>
-          <h2>Who can read it, at each step.</h2>
-          <p class="line">You, until you tap Send. The relay holds 304 locked bytes for 30 minutes at most. Only your agent has the key.</p>
-        </div>
-        <div class="ledger" data-step="ask">
-          <div class="steps" role="tablist" aria-label="Step">
-            <button role="tab" data-to="ask" aria-selected="true">Typing</button>
-            <button role="tab" data-to="sent" aria-selected="false">Sent</button>
-            <button role="tab" data-to="gone" aria-selected="false">Used</button>
+      <section class="row">
+        <dl class="frame facts">
+          <div><dt>304 bytes</dt><dd>is what the relay holds, for any login up to 256 bytes.</dd></div>
+          <div><dt>30 minutes</dt><dd>is the longest a link lives. It’s deleted once your agent has it.</dd></div>
+          <div><dt>80 lines</dt><dd>of encryption, on the browser’s own Web Crypto.</dd></div>
+          <div><dt>61 KB</dt><dd>for the whole page: one file, fonts included.</dd></div>
+        </dl>
+      </section>
+
+      <section class="row" id="link">
+        <div class="frame block">
+          <a class="anchor" href="#link">#link</a>
+          <h2>Everything after the # stays on your device.</h2>
+          <p class="line">Browsers never send that part to a server. The key and the question live there, so the relay never learns what was asked.</p>
+          <div class="anatomy">
+            <div class="bar">
+              <div class="part relay-part"><code>moonlit-lynx-37.convex.site/eF1W…GSAg</code><small>goes to the relay</small></div>
+              <div class="part private-part"><code>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=wOoT…wLU8</code><small>stays on your device</small></div>
+            </div>
+            <div class="side relay">
+              <h3>The relay gets</h3>
+              <table>
+                <tr><td>GET</td><td>/eF1WskT4lLi5yz9YbLGSAg</td><td>200</td></tr>
+                <tr><td>POST</td><td>/eF1WskT4lLi5yz9YbLGSAg</td><td>204</td></tr>
+              </table>
+              <p class="bytes"><span>304 bytes</span> 7c 1e a9 04 5b d2 e8 31 0f 96 c4 2a 7d b0 58 e3 19 a6 4f 02 d1 8b 6e c7 35 f9 20 ab 64 13 9e 5c</p>
+              <p class="note">A random slug, then a locked answer it can’t open.</p>
+            </div>
+            <div class="side browser">
+              <h3>Only your browser sees</h3>
+              <table>
+                <tr><td>from</td><td>hex</td><td>who’s asking</td></tr>
+                <tr><td>name</td><td>Netflix</td><td>what for</td></tr>
+                <tr><td>field</td><td>email, password</td><td>what to fill in</td></tr>
+                <tr><td>key</td><td>wOoTp0jZtO8Bu2VcKTu2K7pw8K_MW3QLBJnJVWBwLU8</td><td>locks it for hex</td></tr>
+              </table>
+              <p class="note">The answer is locked right here, before it leaves.</p>
+            </div>
           </div>
-          <ol>
-            <li><b>you</b><mark data-in="ask">what you type</mark><span data-in="sent">cleared</span><span data-in="gone">cleared</span></li>
-            <li><b>relay</b><span data-in="ask">nothing yet</span><span data-in="sent">304 locked bytes</span><span data-in="gone">deleted</span></li>
-            <li><b>hex</b><span data-in="ask">the only key</span><mark data-in="sent">the only key</mark><mark data-in="gone">Netflix, in its vault</mark></li>
-          </ol>
-          <p class="spec"><span>HPKE</span> · <span>X25519</span> · <span>AES-128-GCM</span></p>
         </div>
       </section>
 
-      <section class="block wrap">
-        <h2>Your agent uses it without seeing it.</h2>
-        <p class="line"><code>enclave run</code> puts it in a command and prints <code>[hidden PASSWORD]</code> wherever it would show up. A 2FA setup key gives fresh 6-digit codes.</p>
-        <pre class="terminal"><code><span class="prompt">$</span> enclave ask Netflix email password
+      <section class="row" id="ledger">
+        <div class="frame block split">
+          <div>
+            <a class="anchor" href="#ledger">#ledger</a>
+            <h2>Who can read it, at each step.</h2>
+            <p class="line">You, until you tap Send. The relay holds 304 locked bytes for 30 minutes at most. Only your agent has the key.</p>
+          </div>
+          <table class="ledger">
+            <thead>
+              <tr><td></td><th>Typing</th><th>Sent</th><th>Used</th></tr>
+            </thead>
+            <tbody>
+              <tr><th>you</th><td><mark>what you type</mark></td><td>cleared</td><td>cleared</td></tr>
+              <tr><th>relay</th><td>nothing yet</td><td>304 locked bytes</td><td>deleted</td></tr>
+              <tr><th>hex</th><td>the only key</td><td><mark>the only key</mark></td><td><mark>Netflix, in its vault</mark></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="row" id="agent">
+        <div class="frame block">
+          <a class="anchor" href="#agent">#agent</a>
+          <h2>Your agent uses it without seeing it.</h2>
+          <p class="line"><code>enclave run</code> puts it in a command and prints <code>[hidden PASSWORD]</code> wherever it would show up. A 2FA setup key gives fresh 6-digit codes.</p>
+          <div class="window">
+            <div class="title"><span>~/projects/movie-night</span><span>bash</span></div>
+            <pre><code><span class="prompt">$</span> enclave ask Netflix email password
 https://moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg<mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=…</mark>
 <span class="dim">Send this link to the person, then run `enclave wait Netflix` in the background.</span>
 <span class="prompt">$</span> enclave wait Netflix
 saved Netflix: email, password
 <span class="prompt">$</span> enclave run PASSWORD=Netflix/password sh -c 'echo "signing in with $PASSWORD"'
 signing in with [hidden PASSWORD]</code></pre>
-      </section>
-
-      <section class="block wrap">
-        <h2>One line for most agents.</h2>
-        <p class="line">A skill for any agent with a shell, MCP for the rest, plus a Claude Code plugin and a Gemini CLI extension.</p>
-        <div class="setup">
-          <div>
-            <h3>Agents with a shell</h3>
-            <button class="command" data-copy="npx skills add AVGVSTVS96/enclave"><code><span class="prompt">$</span> npx skills add AVGVSTVS96/enclave</code><span class="copied" aria-live="polite">Copy</span></button>
-          </div>
-          <div>
-            <h3>MCP</h3>
-            <button class="command" data-copy="npx -y enclave-link mcp"><code><span class="prompt">$</span> npx -y enclave-link mcp</code><span class="copied" aria-live="polite">Copy</span></button>
-          </div>
-          <div>
-            <h3>Claude Code</h3>
-            <button class="command" data-copy="/plugin marketplace add AVGVSTVS96/enclave"><code>/plugin marketplace add AVGVSTVS96/enclave</code><span class="copied" aria-live="polite">Copy</span></button>
           </div>
         </div>
-        <p class="fine">Every client’s exact config is in the <a href="https://github.com/AVGVSTVS96/enclave#set-up-your-agent">README</a>.</p>
       </section>
 
-      <section class="block wrap">
-        <h2>Run your own relay.</h2>
-        <p class="line">The relay is 133 lines of Convex, plus the page it serves. Pick a theme and a color when you deploy, or write your own theme in plain CSS.</p>
-        <button class="command" data-copy="ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy"><code><span class="prompt">$</span> ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy</code><span class="copied" aria-live="polite">Copy</span></button>
-        <div class="themes">
-          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/ledger-dark-sent.webp" /><img src="/shots/ledger-light-sent.webp" width="600" height="1298" alt="ledger theme after sending: the ledger highlights that only hex has the key" /></picture><figcaption>ledger</figcaption></figure>
-          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/ledger-7ef0b4-dark-ask.webp" /><img src="/shots/ledger-7ef0b4-light-ask.webp" width="600" height="1298" alt="ledger theme with a mint highlight" /></picture><figcaption>ledger · #7ef0b4</figcaption></figure>
-          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/field-dark-sent.webp" /><img src="/shots/field-light-sent.webp" width="600" height="1298" alt="field theme after sending: a track from you to the relay, with hex still to come" /></picture><figcaption>field</figcaption></figure>
-          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/field-ff4a2e-dark-ask.webp" /><img src="/shots/field-ff4a2e-light-ask.webp" width="600" height="1298" alt="field theme in tomato red, with dark text chosen for contrast" /></picture><figcaption>field · #ff4a2e</figcaption></figure>
+      <section class="row" id="setup">
+        <div class="frame block split">
+          <div>
+            <a class="anchor" href="#setup">#setup</a>
+            <h2>One line for most agents.</h2>
+            <p class="line">A skill for any agent with a shell, MCP for the rest, plus a Claude Code plugin and a Gemini CLI extension.</p>
+            <p class="fine">Every client’s exact config is in the <a href="https://github.com/AVGVSTVS96/enclave#set-up-your-agent">README</a>.</p>
+          </div>
+          <div class="setup">
+            <div>
+              <h3>Agents with a shell</h3>
+              <button class="command" data-copy="npx skills add AVGVSTVS96/enclave"><code><span class="prompt">$</span> npx skills add AVGVSTVS96/enclave</code><svg class="copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="8" height="8" rx="1.75" /><path d="M10.75 5.25V3.5A1.25 1.25 0 0 0 9.5 2.25h-6A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75" /></svg><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.25 3.25L13 5" /></svg><span class="copied" aria-live="polite"></span></button>
+            </div>
+            <div>
+              <h3>MCP</h3>
+              <button class="command" data-copy="npx -y enclave-link mcp"><code><span class="prompt">$</span> npx -y enclave-link mcp</code><svg class="copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="8" height="8" rx="1.75" /><path d="M10.75 5.25V3.5A1.25 1.25 0 0 0 9.5 2.25h-6A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75" /></svg><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.25 3.25L13 5" /></svg><span class="copied" aria-live="polite"></span></button>
+            </div>
+            <div>
+              <h3>Claude Code</h3>
+              <button class="command" data-copy="/plugin marketplace add AVGVSTVS96/enclave"><code>/plugin marketplace add AVGVSTVS96/enclave</code><svg class="copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="8" height="8" rx="1.75" /><path d="M10.75 5.25V3.5A1.25 1.25 0 0 0 9.5 2.25h-6A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75" /></svg><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.25 3.25L13 5" /></svg><span class="copied" aria-live="polite"></span></button>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="block wrap">
-        <h2>What it can’t protect against.</h2>
-        <ul class="limits">
-          <li><b>Whoever runs the relay sends you the page,</b> so they could change it. Every site that encrypts in your browser works this way. If you’d rather trust nobody’s relay, run your own.</li>
-          <li><b>Anyone with the link can answer first.</b> They can’t read anything, but they could send a fake answer. You’d see “This link doesn’t work anymore.”</li>
-          <li><b>A link can claim anyone is asking.</b> Only send secrets to agents you asked for help.</li>
-          <li><b>An agent set on reading its own vault can.</b> enclave stops secrets from leaking into the chat by accident, not a model that’s trying.</li>
-        </ul>
-        <p class="spec"><span>HPKE (RFC 9180)</span> · <span>X25519</span> · <span>HKDF-SHA256</span> · <span>AES-128-GCM</span> · <span>Web Crypto, no libraries</span></p>
+      <section class="row" id="self-host">
+        <div class="frame block split">
+          <div>
+            <a class="anchor" href="#self-host">#self-host</a>
+            <h2>Run your own relay.</h2>
+            <p class="line">The relay is 133 lines of Convex, plus the page it serves. Pick a theme and a color when you deploy, or write your own theme in plain CSS.</p>
+            <button class="command" data-copy="ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy"><code><span class="prompt">$</span> ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy</code><svg class="copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="8" height="8" rx="1.75" /><path d="M10.75 5.25V3.5A1.25 1.25 0 0 0 9.5 2.25h-6A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75" /></svg><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.25 3.25L13 5" /></svg><span class="copied" aria-live="polite"></span></button>
+            <dl class="knobs">
+              <div><dt>ENCLAVE_THEME</dt><dd><code>ledger</code>, <code>field</code>, or a path to your own CSS file</dd></div>
+              <div><dt>ENCLAVE_COLOR</dt><dd>any hex color. Text on it turns white or ink, whichever reads better.</dd></div>
+            </dl>
+          </div>
+          <div class="window theme-file">
+            <div class="title"><span>page/themes/field.css</span><span>css</span></div>
+            <pre><code><span class="dim">:root {</span>
+  --accent: <i style="--swatch: #2b3ff0"></i>#2b3ff0;
+  --on-accent: <i style="--swatch: #fff"></i>#fff;
+  --accent-deep: color-mix(in srgb, var(--accent) 75%, #000);
+  --on-accent-deep: <i style="--swatch: #fff"></i>#fff;
+  --bg: var(--accent);
+  --fg: var(--on-accent);
+  --outside: <i style="--swatch: #eceef2"></i>#eceef2;
+  --ink: <i style="--swatch: #0b0d14"></i>#0b0d14;
+  --input: <i style="--swatch: #fff"></i>#fff;
+  --input-text: <i style="--swatch: #10131a"></i>#10131a;
+  --mono: "Geist Mono", ui-monospace, monospace;
+  font: 18px/1.5 Geist, system-ui, sans-serif;
+<span class="dim">}</span></code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="row" id="limits">
+        <div class="frame block">
+          <a class="anchor" href="#limits">#limits</a>
+          <h2>What it can’t protect against.</h2>
+          <ul class="limits">
+            <li><b>Whoever runs the relay sends you the page,</b> so they could change it. Every site that encrypts in your browser works this way. If you’d rather trust nobody’s relay, run your own.</li>
+            <li><b>Anyone with the link can answer first.</b> They can’t read anything, but they could send a fake answer. You’d see “This link doesn’t work anymore.”</li>
+            <li><b>A link can claim anyone is asking.</b> Only send secrets to agents you asked for help.</li>
+            <li><b>An agent set on reading its own vault can.</b> enclave stops secrets from leaking into the chat by accident, not a model that’s trying.</li>
+          </ul>
+          <p class="spec"><span>HPKE (RFC 9180)</span><span>X25519</span><span>HKDF-SHA256</span><span>AES-128-GCM</span><span>Web Crypto, no libraries</span></p>
+        </div>
       </section>
     </main>
 
-    <footer class="bottom wrap">
-      <span>enclave · MIT</span>
-      <a href="https://github.com/AVGVSTVS96/enclave">github.com/AVGVSTVS96/enclave</a>
+    <footer class="row">
+      <div class="frame bottom">
+        <span><svg class="mark" viewBox="-2.78 -79.04 98.37 98.37" aria-hidden="true"><rect y="-36" width="92.8" height="46" rx="6" class="hl" /><path class="ink" d="M35 0L22 0L32-72L45-72L35 0ZM60.80 0L47.80 0L57.80-72L70.80-72L60.80 0ZM15.50-42.50L15.50-54.70L79.80-54.70L79.80-42.50L15.50-42.50ZM13-18.30L13-30.50L77.30-30.50L77.30-18.30L13-18.30Z" /><path class="on-hl" clip-path="url(#bar)" d="M35 0L22 0L32-72L45-72L35 0ZM60.80 0L47.80 0L57.80-72L70.80-72L60.80 0ZM15.50-42.50L15.50-54.70L79.80-54.70L79.80-42.50L15.50-42.50ZM13-18.30L13-30.50L77.30-30.50L77.30-18.30L13-18.30Z" /></svg> enclave · MIT</span>
+        <a href="https://github.com/AVGVSTVS96/enclave">github.com/AVGVSTVS96/enclave</a>
+      </div>
     </footer>
   </body>
 </html>
