@@ -11,7 +11,7 @@ const instructions = `Never ask the person for a password, API key or other secr
 const reply = (text: string) => ({ content: [{ type: "text" as const, text }] })
 
 export async function serve(vault: Vault) {
-  const server = new McpServer({ name: "psst", version: packageJson.version }, { instructions })
+  const server = new McpServer({ name: "enclave", version: packageJson.version }, { instructions })
   const elicitations = new Map<string, string>()
 
   server.registerTool(

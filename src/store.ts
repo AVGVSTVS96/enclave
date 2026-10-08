@@ -7,8 +7,8 @@ import { generateKeyPair, open, seal } from "./hpke.ts"
 export type Item = Record<string, string>
 
 const text = new TextEncoder()
-const info = text.encode("psst item")
-const extension = ".psst"
+const info = text.encode("enclave item")
+const extension = ".enclave"
 
 export class Store {
   readonly dir: string

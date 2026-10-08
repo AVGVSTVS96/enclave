@@ -3,7 +3,7 @@ import { open, seal } from "./hpke.ts"
 export type Answer = Record<string, string>
 
 const text = new TextEncoder()
-const info = text.encode("psst answer")
+const info = text.encode("enclave answer")
 const blockSize = 256
 
 export function sealAnswer(publicKey: Uint8Array<ArrayBuffer>, name: string, answer: Answer) {

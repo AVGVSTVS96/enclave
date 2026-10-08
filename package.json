@@ -1,5 +1,5 @@
 {
-  "name": "psst-link",
+  "name": "enclave-link",
   "version": "0.1.0",
   "description": "Ask a person for a secret through a one-time link. It's encrypted in their browser, and only your agent can open it.",
   "license": "MIT",
@@ -12,7 +12,7 @@
   },
   "types": "./dist/types/index.d.ts",
   "bin": {
-    "psst": "dist/psst.js"
+    "enclave": "dist/enclave.js"
   },
   "files": [
     "dist"
@@ -36,5 +36,5 @@
     "typescript": "^7.0.2",
     "zod": "^4.6.5"
   },
-  "mcpName": "io.github.avgvstvs96/psst"
+  "mcpName": "io.github.avgvstvs96/enclave"
 }

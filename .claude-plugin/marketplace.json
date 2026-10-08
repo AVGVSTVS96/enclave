@@ -1,10 +1,10 @@
 {
-  "name": "psst",
-  "description": "psst for Claude Code: ask for secrets through a one-time encrypted link instead of chat",
+  "name": "enclave",
+  "description": "enclave for Claude Code: ask for secrets through a one-time encrypted link instead of chat",
   "owner": { "name": "Bassim Shahidy", "url": "https://github.com/AVGVSTVS96" },
   "plugins": [
     {
-      "name": "psst",
+      "name": "enclave",
       "source": "./",
       "description": "Ask a person for a secret through a one-time encrypted link, keep it in your own vault, and use it without seeing it"
     }

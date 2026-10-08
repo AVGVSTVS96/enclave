@@ -1,11 +1,11 @@
 {
-  "name": "psst",
+  "name": "enclave",
   "version": "0.1.0",
   "description": "Ask a person for a secret through a one-time encrypted link, keep it in your own vault, and use it without seeing it",
   "mcpServers": {
-    "psst": {
+    "enclave": {
       "command": "npx",
-      "args": ["-y", "psst-link", "mcp"]
+      "args": ["-y", "enclave-link", "mcp"]
     }
   }
 }

@@ -37,9 +37,9 @@ const requests = {
 }
 
 export function openVault({
-  from = process.env.PSST_FROM,
-  home = process.env.PSST_HOME ?? join(homedir(), ".psst"),
-  relay = process.env.PSST_RELAY ?? hostedRelay,
+  from = process.env.ENCLAVE_FROM,
+  home = process.env.ENCLAVE_HOME ?? join(homedir(), ".enclave"),
+  relay = process.env.ENCLAVE_RELAY ?? hostedRelay,
 }: VaultOptions = {}) {
   const store = new Store(home)
   const pendingPath = (name: string) => join(home, "pending", `${encodeURIComponent(name)}.json`)

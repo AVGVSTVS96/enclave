@@ -4,7 +4,7 @@ import { build } from "esbuild"
 
 await rm("dist", { recursive: true, force: true })
 await build({
-  entryPoints: { psst: "src/cli.ts", index: "src/index.ts" },
+  entryPoints: { enclave: "src/cli.ts", index: "src/index.ts" },
   bundle: true,
   splitting: true,
   platform: "node",
