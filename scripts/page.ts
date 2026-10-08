@@ -58,12 +58,16 @@ function accent(value: string) {
   const hex = value.match(/^#?([\da-f]{6}|[\da-f]{3})$/i)?.[1]
   if (!hex) throw new Error(`ENCLAVE_COLOR: "${value}" isn't a hex color like #ffe04a`)
   const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join("") : hex
-  const contrast = (a: string, b: string) => {
-    const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  const deep = full.replace(/../g, (pair) => Math.round(parseInt(pair, 16) * 0.75).toString(16).padStart(2, "0"))
+  return `\n:root { --accent: #${full}; --on-accent: ${readableOn(full)}; --on-accent-deep: ${readableOn(deep)}; }\n`
+}
+
+function readableOn(hex: string) {
+  const contrast = (other: string) => {
+    const [light, dark] = [luminance(hex), luminance(other)].sort((x, y) => y - x)
     return (light! + 0.05) / (dark! + 0.05)
   }
-  const onAccent = contrast(full, "161616") > contrast(full, "ffffff") ? "#161616" : "#fff"
-  return `\n:root { --accent: #${full}; --on-accent: ${onAccent}; }\n`
+  return contrast("161616") > contrast("ffffff") ? "#161616" : "#fff"
 }
 
 function luminance(hex: string) {

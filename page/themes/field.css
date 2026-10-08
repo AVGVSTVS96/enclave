@@ -13,6 +13,7 @@
 :root {
   --accent: #2b3ff0;
   --on-accent: #fff;
+  --on-accent-deep: #fff;
   --bg: var(--accent);
   --fg: var(--on-accent);
   --outside: #eceef2;
@@ -25,8 +26,8 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: color-mix(in oklab, var(--accent) 45%, #000);
-    --fg: #fff;
+    --bg: color-mix(in srgb, var(--accent) 75%, #000);
+    --fg: var(--on-accent-deep);
     --outside: #15161a;
     --input: #0d0e12;
     --input-text: #f1f2f6;
