@@ -148,6 +148,7 @@ h1 {
 
 .fine {
   margin-top: 1rem;
+  text-wrap: pretty;
   color: var(--muted);
   font-size: 0.85rem;
 }
@@ -161,8 +162,9 @@ h1 {
   padding: 0.85rem 1rem;
   border: 0;
   border-radius: 0.6rem;
-  background: var(--ink);
-  color: var(--paper);
+  background: var(--term);
+  color: var(--term-text);
+  box-shadow: inset 0 0 0 1px var(--line);
   font: inherit;
   cursor: pointer;
   text-align: left;
@@ -308,14 +310,14 @@ h3 {
 
 .steps {
   display: flex;
-  gap: 0.25rem;
+  gap: 1.25rem;
   margin-bottom: 1rem;
 }
 
 .steps button {
-  padding: 0.35rem 0.8rem;
+  padding: 0.35rem 0.1rem;
   border: 0;
-  border-radius: 999px;
+  border-radius: 0;
   background: none;
   color: var(--muted);
   font: inherit;
@@ -325,9 +327,8 @@ h3 {
 }
 
 .steps [aria-selected="true"] {
-  background: var(--paper);
   color: var(--ink);
-  box-shadow: inset 0 0 0 1px var(--line);
+  box-shadow: inset 0 -2px 0 var(--ink);
 }
 
 .ledger ol {
@@ -366,13 +367,16 @@ h3 {
 [data-step="sent"] [data-in="sent"],
 [data-step="gone"] [data-in="gone"] {
   display: inline;
-  animation: arrive 0.3s ease-out;
 }
 
-@keyframes arrive {
+.ledger mark {
+  background: linear-gradient(var(--hl), var(--hl)) no-repeat 0 0 / 100% 100%;
+  animation: wipe 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@keyframes wipe {
   from {
-    opacity: 0;
-    transform: translateY(0.2rem);
+    background-size: 0 100%;
   }
 }
 
@@ -392,18 +396,13 @@ h3 {
 .terminal {
   margin-top: 2.5rem;
   padding: 1.5rem;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  overflow-x: auto;
   border-radius: 1rem;
   background: var(--term);
   color: var(--term-text);
   font-size: 0.82rem;
   line-height: 1.75;
   box-shadow: inset 0 0 0 1px var(--line);
-}
-
-.terminal.short {
-  margin-top: 2rem;
 }
 
 .terminal mark {
@@ -418,7 +417,6 @@ h3 {
 .setup {
   display: grid;
   gap: 0.75rem;
-  max-width: 44rem;
   margin-top: 2.5rem;
 }
 
@@ -454,7 +452,6 @@ h3 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem 3rem;
-  max-width: 60rem;
   margin-top: 2.5rem;
   padding: 0;
   list-style: none;
@@ -518,7 +515,39 @@ h3 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-in] {
-    animation: none !important;
+  .ledger mark {
+    animation: none;
+  }
+}
+
+.spec span {
+  white-space: nowrap;
+}
+
+.themes picture {
+  display: block;
+}
+
+h1 mark {
+  padding: 0 0.08em;
+  border-radius: 0.06em;
+}
+
+@media (max-width: 40rem) {
+  .anatomy code {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    word-break: normal;
+  }
+}
+
+@media (min-width: 60rem) and (max-width: 75rem) {
+  .phone {
+    width: 14rem;
+  }
+
+  .phone:last-child {
+    margin-left: -4rem;
   }
 }

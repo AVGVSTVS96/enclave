@@ -9,7 +9,7 @@
     <meta property="og:title" content="enclave" />
     <meta property="og:description" content="Your agent sends a one-time link instead of asking for a password in chat. It's locked in your browser, and only your agent can open it." />
     <meta property="og:url" content="https://enclave-pink.vercel.app" />
-    <meta property="og:image" content="https://enclave-pink.vercel.app/og.png?v=1" />
+    <meta property="og:image" content="https://enclave-pink.vercel.app/og.png?v=2" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="enclave: hex is asking for Netflix on a one-time page with email and password fields and a Send to hex button." />
@@ -32,7 +32,7 @@
     <main>
       <section class="hero wrap">
         <div class="say">
-          <h1><span>Your agent needs a password.</span> <span>It sends a link.</span></h1>
+          <h1><span>Your agent needs a password.</span> <span>It sends a <mark>link</mark>.</span></h1>
           <p class="sub">You type it and tap Send. Only your agent can open it.</p>
           <button class="command" data-copy="npx skills add AVGVSTVS96/enclave">
             <code><span class="prompt">$</span> npx skills add AVGVSTVS96/enclave</code>
@@ -66,7 +66,7 @@
           </div>
           <div class="part secret">
             <code><mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=wOoTp0jZtO8Bu2VcKTu2K7pw8K_MW3QLBJnJVWBwLU8</mark></code>
-            <p><b>Only your browser</b> sees this: who's asking, what for, and the key that locks it.</p>
+            <p><b>Only your browser</b> sees this: who’s asking, what for, and the key that locks it.</p>
           </div>
         </div>
       </section>
@@ -87,7 +87,7 @@
             <li><b>relay</b><span data-in="ask">nothing yet</span><span data-in="sent">304 locked bytes</span><span data-in="gone">deleted</span></li>
             <li><b>hex</b><span data-in="ask">the only key</span><mark data-in="sent">the only key</mark><mark data-in="gone">Netflix, in its vault</mark></li>
           </ol>
-          <p class="spec">HPKE · X25519 · AES-128-GCM</p>
+          <p class="spec"><span>HPKE</span> · <span>X25519</span> · <span>AES-128-GCM</span></p>
         </div>
       </section>
 
@@ -95,7 +95,7 @@
         <h2>Your agent uses it without seeing it.</h2>
         <p class="line"><code>enclave run</code> puts it in a command and prints <code>[hidden PASSWORD]</code> wherever it would show up. A 2FA setup key gives fresh 6-digit codes.</p>
         <pre class="terminal"><code><span class="prompt">$</span> enclave ask Netflix email password
-https://moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg<mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=wOoTp0jZ…</mark>
+https://moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg<mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=…</mark>
 <span class="dim">Send this link to the person, then run `enclave wait Netflix` in the background.</span>
 <span class="prompt">$</span> enclave wait Netflix
 saved Netflix: email, password
@@ -120,30 +120,30 @@ signing in with [hidden PASSWORD]</code></pre>
             <button class="command" data-copy="/plugin marketplace add AVGVSTVS96/enclave"><code>/plugin marketplace add AVGVSTVS96/enclave</code><span class="copied" aria-live="polite">Copy</span></button>
           </div>
         </div>
-        <p class="fine">Every client's exact config is in the <a href="https://github.com/AVGVSTVS96/enclave#set-up-your-agent">README</a>.</p>
+        <p class="fine">Every client’s exact config is in the <a href="https://github.com/AVGVSTVS96/enclave#set-up-your-agent">README</a>.</p>
       </section>
 
       <section class="block wrap">
         <h2>Run your own relay.</h2>
-        <p class="line">It's a Convex app in 133 lines. Pick a theme and a color when you deploy, or write your own theme in plain CSS.</p>
-        <pre class="terminal short"><code><span class="prompt">$</span> ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy</code></pre>
+        <p class="line">The relay is 133 lines of Convex, plus the page it serves. Pick a theme and a color when you deploy, or write your own theme in plain CSS.</p>
+        <button class="command" data-copy="ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy"><code><span class="prompt">$</span> ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy</code><span class="copied" aria-live="polite">Copy</span></button>
         <div class="themes">
-          <figure><img src="/shots/ledger-light-sent.webp" width="600" height="1298" alt="ledger theme after sending: the ledger highlights that only hex has the key" /><figcaption>ledger</figcaption></figure>
-          <figure><img src="/shots/ledger-7ef0b4-light-ask.webp" width="600" height="1298" alt="ledger theme with a mint highlight" /><figcaption>ledger · #7ef0b4</figcaption></figure>
-          <figure><img src="/shots/field-light-sent.webp" width="600" height="1298" alt="field theme after sending: a track from you to the relay, with hex still to come" /><figcaption>field</figcaption></figure>
-          <figure><img src="/shots/field-ff4a2e-light-ask.webp" width="600" height="1298" alt="field theme in tomato red, with dark text chosen for contrast" /><figcaption>field · #ff4a2e</figcaption></figure>
+          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/ledger-dark-sent.webp" /><img src="/shots/ledger-light-sent.webp" width="600" height="1298" alt="ledger theme after sending: the ledger highlights that only hex has the key" /></picture><figcaption>ledger</figcaption></figure>
+          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/ledger-7ef0b4-dark-ask.webp" /><img src="/shots/ledger-7ef0b4-light-ask.webp" width="600" height="1298" alt="ledger theme with a mint highlight" /></picture><figcaption>ledger · #7ef0b4</figcaption></figure>
+          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/field-dark-sent.webp" /><img src="/shots/field-light-sent.webp" width="600" height="1298" alt="field theme after sending: a track from you to the relay, with hex still to come" /></picture><figcaption>field</figcaption></figure>
+          <figure><picture><source media="(prefers-color-scheme: dark)" srcset="/shots/field-ff4a2e-dark-ask.webp" /><img src="/shots/field-ff4a2e-light-ask.webp" width="600" height="1298" alt="field theme in tomato red, with dark text chosen for contrast" /></picture><figcaption>field · #ff4a2e</figcaption></figure>
         </div>
       </section>
 
       <section class="block wrap">
-        <h2>What it can't protect against.</h2>
+        <h2>What it can’t protect against.</h2>
         <ul class="limits">
-          <li><b>Whoever runs the relay sends you the page,</b> so they could change it. Every site that encrypts in your browser works this way. If you'd rather trust nobody's relay, run your own.</li>
-          <li><b>Anyone with the link can answer first.</b> They can't read anything, but they could send a fake answer. You'd see "This link doesn't work anymore."</li>
+          <li><b>Whoever runs the relay sends you the page,</b> so they could change it. Every site that encrypts in your browser works this way. If you’d rather trust nobody’s relay, run your own.</li>
+          <li><b>Anyone with the link can answer first.</b> They can’t read anything, but they could send a fake answer. You’d see “This link doesn’t work anymore.”</li>
           <li><b>A link can claim anyone is asking.</b> Only send secrets to agents you asked for help.</li>
-          <li><b>An agent set on reading its own vault can.</b> enclave stops secrets from leaking into the chat by accident, not a model that's trying.</li>
+          <li><b>An agent set on reading its own vault can.</b> enclave stops secrets from leaking into the chat by accident, not a model that’s trying.</li>
         </ul>
-        <p class="spec">HPKE (RFC 9180) · X25519 · HKDF-SHA256 · AES-128-GCM · Web Crypto, no libraries</p>
+        <p class="spec"><span>HPKE (RFC 9180)</span> · <span>X25519</span> · <span>HKDF-SHA256</span> · <span>AES-128-GCM</span> · <span>Web Crypto, no libraries</span></p>
       </section>
     </main>
 
