@@ -3,22 +3,25 @@ import { StringDecoder } from "node:string_decoder"
 import { Transform, type Writable } from "node:stream"
 import { pipeline } from "node:stream/promises"
 
-export interface Output {
+export interface Stdio {
+  stdin: "inherit" | "ignore"
   stdout: Writable
   stderr: Writable
 }
 
-export async function runWithSecrets(command: string[], secrets: Record<string, string>, output: Output = process) {
+const terminal: Stdio = { stdin: "inherit", stdout: process.stdout, stderr: process.stderr }
+
+export async function runWithSecrets(command: string[], secrets: Record<string, string>, stdio = terminal) {
   const [program, ...args] = command
   if (!program) throw new Error("nothing to run")
-  const child = spawn(program, args, { env: { ...process.env, ...secrets }, stdio: ["inherit", "pipe", "pipe"] })
+  const child = spawn(program, args, { env: { ...process.env, ...secrets }, stdio: [stdio.stdin, "pipe", "pipe"] })
   const exited = new Promise<number>((resolve, reject) => {
     child.on("error", reject)
     child.on("close", (code) => resolve(code ?? 1))
   })
   await Promise.all([
-    pipeline(child.stdout, redact(secrets), output.stdout, { end: false }),
-    pipeline(child.stderr, redact(secrets), output.stderr, { end: false }),
+    pipeline(child.stdout, redact(secrets), stdio.stdout, { end: false }),
+    pipeline(child.stderr, redact(secrets), stdio.stderr, { end: false }),
   ])
   return exited
 }

@@ -38,7 +38,7 @@ test("runs a command with secrets in its environment and hides them in its outpu
   const stderr = new PassThrough()
   const out: string[] = []
   stdout.on("data", (chunk) => out.push(String(chunk)))
-  const code = await runWithSecrets(["sh", "-c", 'echo "token is $TOKEN"; echo "$TOKEN" >&2; exit 3'], { TOKEN: "hunter2hunter2" }, { stdout, stderr })
+  const code = await runWithSecrets(["sh", "-c", 'echo "token is $TOKEN"; echo "$TOKEN" >&2; exit 3'], { TOKEN: "hunter2hunter2" }, { stdin: "ignore", stdout, stderr })
   assert.equal(code, 3)
   assert.equal(out.join(""), "token is [hidden TOKEN]\n")
   assert.equal(String(stderr.read()), "[hidden TOKEN]\n")

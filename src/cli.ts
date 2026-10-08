@@ -9,6 +9,7 @@ const usage = `psst: ask a person for a secret through a one-time link, without 
   psst get <name> <field>             print a saved value, only ever into a pipe or $(...)
   psst list                           saved names and their fields
   psst rm <name>                      delete a saved item
+  psst mcp                            serve all of this to an agent over MCP (stdio)
 
 A field named totp holds a 2FA setup key, and get gives its current code.
 PSST_FROM names who's asking on the page, PSST_HOME holds the vault (~/.psst),
@@ -34,6 +35,9 @@ try {
     for (const item of await vault.list()) console.log(`${item.name}: ${item.fields.join(", ")}`)
   } else if (command === "rm" && name) {
     await vault.remove(name)
+  } else if (command === "mcp") {
+    const { serve } = await import("./mcp.ts")
+    await serve(vault)
   } else {
     console.log(usage)
     process.exitCode = command && command !== "help" ? 1 : 0

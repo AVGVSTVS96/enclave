@@ -6,7 +6,7 @@ import { join } from "node:path"
 import { openAnswer } from "./answer.ts"
 import { decode, encode } from "./base64url.ts"
 import { generateKeyPair } from "./hpke.ts"
-import { runWithSecrets, type Output } from "./run.ts"
+import { runWithSecrets, type Stdio } from "./run.ts"
 import { Store } from "./store.ts"
 import { totp } from "./totp.ts"
 
@@ -52,10 +52,10 @@ export function openVault({
   async function ask(name: string, fields = ["password"]): Promise<Request> {
     const token = encode(crypto.getRandomValues(new Uint8Array(32)))
     const { publicKey, privateKey } = await generateKeyPair()
-    const url = await new ConvexHttpClient(relay).mutation(requests.open, { token })
+    const url = await new ConvexHttpClient(relay, { logger: false }).mutation(requests.open, { token })
 
     const previous = await readPending(name)
-    if (previous) await new ConvexHttpClient(previous.relay).mutation(requests.close, { token: previous.token }).catch(() => undefined)
+    if (previous) await new ConvexHttpClient(previous.relay, { logger: false }).mutation(requests.close, { token: previous.token }).catch(() => undefined)
     await mkdir(join(home, "pending"), { recursive: true, mode: 0o700 })
     await writeFile(pendingPath(name), JSON.stringify({ relay, token, privateKey: encode(privateKey), fields }), { mode: 0o600 })
 
@@ -71,7 +71,7 @@ export function openVault({
   async function wait(name: string) {
     const pending = await readPending(name)
     if (!pending) throw new Error(`nothing asked for ${name}`)
-    const client = new ConvexClient(pending.relay)
+    const client = new ConvexClient(pending.relay, { logger: false })
     try {
       const sealed = await new Promise<ArrayBuffer>((resolve, reject) =>
         client.onUpdate(
@@ -111,7 +111,7 @@ export function openVault({
     await store.remove(name)
   }
 
-  async function run(command: string[], secrets: Record<string, string>, output?: Output) {
+  async function run(command: string[], secrets: Record<string, string>, stdio?: Stdio) {
     const values = await Promise.all(
       Object.entries(secrets).map(async ([variable, reference]) => {
         const slash = reference.lastIndexOf("/")
@@ -119,7 +119,7 @@ export function openVault({
         return [variable, await get(reference.slice(0, slash), reference.slice(slash + 1))]
       }),
     )
-    return runWithSecrets(command, Object.fromEntries(values), output)
+    return runWithSecrets(command, Object.fromEntries(values), stdio)
   }
 
   return { ask, wait, get, list, remove, run }
