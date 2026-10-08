@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: "Instrument Sans";
+        src: url(public/fonts/instrument-sans.woff2) format("woff2");
+        font-weight: 400 700;
+      }
+
+      @font-face {
+        font-family: "JetBrains Mono";
+        src: url(public/fonts/jetbrains-mono.woff2) format("woff2");
+        font-weight: 400 700;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+
+      body {
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 56px;
+        padding: 64px 72px 0;
+        background: #fbfbf8;
+        color: #161616;
+        font-family: "Instrument Sans", sans-serif;
+      }
+
+      .wordmark {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        font-size: 40px;
+        font-weight: 600;
+        letter-spacing: -0.03em;
+      }
+
+      .wordmark svg {
+        width: 44px;
+        height: 44px;
+      }
+
+      h1 {
+        margin-top: 64px;
+        font-size: 72px;
+        font-weight: 600;
+        line-height: 1;
+        letter-spacing: -0.045em;
+      }
+
+      h1 span {
+        display: block;
+      }
+
+      mark {
+        padding: 0 6px;
+        border-radius: 6px;
+        background: #ffe04a;
+        color: inherit;
+      }
+
+      .phone {
+        align-self: start;
+        width: 380px;
+        border-radius: 34px;
+        box-shadow: 0 0 0 1.5px #e4e4dd;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <div class="wordmark">
+        <svg viewBox="0 0 40 40"><rect y="19" width="40" height="17" rx="4" fill="#ffe04a" /><path d="M16.5 6.5 13.5 33.5M27 6.5 24 33.5M9.5 14.5h22M8.5 25.5h22" fill="none" stroke="#161616" stroke-width="4" stroke-linecap="round" /></svg>
+        enclave
+      </div>
+      <h1><span>Your agent needs a password.</span> <span>It sends a <mark>link</mark>.</span></h1>
+    </div>
+    <img class="phone" src="public/shots/ledger-light-ask.webp" alt="" />
+  </body>
+</html>
