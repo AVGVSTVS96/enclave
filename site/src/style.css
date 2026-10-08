@@ -112,11 +112,12 @@ mark {
   fill: var(--hl);
 }
 
-.mark path {
-  fill: none;
-  stroke: var(--ink);
-  stroke-width: 4;
-  stroke-linecap: round;
+.mark .ink {
+  fill: var(--ink);
+}
+
+.mark .on-hl {
+  fill: var(--on-hl);
 }
 
 .hero {

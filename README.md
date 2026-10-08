@@ -1,4 +1,9 @@
-# enclave
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/header-dark.png" />
+    <img src="assets/header-light.png" width="838" alt="enclave" />
+  </picture>
+</h1>
 
 Your AI agent needs your Netflix password. Instead of asking in chat, it sends you a link. You open it, type the password (or let your password manager fill it) and tap **Send**. It's locked in your browser before it leaves, so only your agent can open it. The agent keeps it in a vault of its own and uses it later without ever seeing it.
 
