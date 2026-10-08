@@ -13,6 +13,7 @@
 :root {
   --accent: #2b3ff0;
   --on-accent: #fff;
+  --accent-deep: color-mix(in srgb, var(--accent) 75%, #000);
   --on-accent-deep: #fff;
   --bg: var(--accent);
   --fg: var(--on-accent);
@@ -26,7 +27,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: color-mix(in srgb, var(--accent) 75%, #000);
+    --bg: var(--accent-deep);
     --fg: var(--on-accent-deep);
     --outside: #15161a;
     --input: #0d0e12;
@@ -208,13 +209,8 @@ footer {
   display: none;
 }
 
-[data-state="gone"] .route {
-  opacity: 0.35;
-}
-
 [data-state="gone"] .route::before {
   background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 12px);
-  opacity: 1;
 }
 
 [data-state="gone"] .route::after {
@@ -223,7 +219,7 @@ footer {
 
 [data-state="gone"] .route li::before {
   background: var(--bg);
-  box-shadow: inset 0 0 0 2px currentColor;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--fg) 35%, var(--bg));
 }
 
 .spec {
@@ -232,7 +228,7 @@ footer {
   column-gap: 0.5em;
   font: 500 0.65rem var(--mono);
   white-space: nowrap;
-  opacity: 0.75;
+  opacity: 0.9;
 }
 
 .spec [data-show]::after {

@@ -23,7 +23,7 @@
 .field {
   --accent: #2b3ff0;
   --on-accent: #ffffff;
-  --deep: color-mix(in oklab, var(--accent) 75%, #000);
+  --deep: color-mix(in srgb, var(--accent) 75%, #000);
   --bg: light-dark(var(--accent), var(--deep));
   --fg: light-dark(var(--on-accent), #ffffff);
   --muted: color-mix(in srgb, var(--fg) 85%, var(--bg));

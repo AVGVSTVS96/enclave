@@ -32,7 +32,7 @@ A full-bleed field of color means **inside the enclave**. The ask screen is just
 
 ### Custom color
 
-Each theme takes one color, `ENCLAVE_COLOR`, as `--accent`: ledger's highlight, field's background. Text on it is white or ink, whichever passes 4.5:1 (cobalt gets white, `#ff4a2e` gets ink). field's dark background is `--accent` mixed 75% with black in oklab, which lands cobalt on `#1a28a3`, the board's deep blue.
+Each theme takes one color, `ENCLAVE_COLOR`, as `--accent`: ledger's highlight, field's background. Text on it is white or ink, whichever passes 4.5:1 (cobalt gets white, `#ff4a2e` gets ink). field's dark background is `--accent` mixed 75% with black in sRGB, which lands cobalt on `#202fb4`. A color light enough to carry ink text stays as it is in dark mode, the way ledger keeps its yellow, since darkening it only muddies it.
 
 ### Tokens
 

@@ -58,8 +58,9 @@ function accent(value: string) {
   const hex = value.match(/^#?([\da-f]{6}|[\da-f]{3})$/i)?.[1]
   if (!hex) throw new Error(`ENCLAVE_COLOR: "${value}" isn't a hex color like #ffe04a`)
   const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join("") : hex
-  const deep = full.replace(/../g, (pair) => Math.round(parseInt(pair, 16) * 0.75).toString(16).padStart(2, "0"))
-  return `\n:root { --accent: #${full}; --on-accent: ${readableOn(full)}; --on-accent-deep: ${readableOn(deep)}; }\n`
+  const onAccent = readableOn(full)
+  const deep = onAccent === "#fff" ? full.replace(/../g, (pair) => Math.round(parseInt(pair, 16) * 0.75).toString(16).padStart(2, "0")) : full
+  return `\n:root { --accent: #${full}; --on-accent: ${onAccent}; --accent-deep: #${deep}; --on-accent-deep: ${readableOn(deep)}; }\n`
 }
 
 function readableOn(hex: string) {
