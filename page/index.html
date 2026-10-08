@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en" data-state="%state%">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <meta name="color-scheme" content="light dark" />
+    <title>A private request</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round'%3E%3Crect x='4' y='11' width='16' height='10' rx='2'/%3E%3Cpath d='M8 11V7a4 4 0 0 1 8 0v4'/%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --page: #f4f4f2;
+        --card: #fff;
+        --text: #1b1b1a;
+        --muted: #6f6f6b;
+        --line: #d9d9d5;
+        --error: #b42318;
+        font: 18px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --page: #111110;
+          --card: #1d1d1c;
+          --text: #f2f2ef;
+          --muted: #9d9d98;
+          --line: #3a3a38;
+          --error: #fda29b;
+        }
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+      }
+
+      body {
+        min-height: 100dvh;
+        display: grid;
+        grid-template-columns: minmax(0, 26rem);
+        place-content: center;
+        padding: 1.25rem;
+        background: var(--page);
+        color: var(--text);
+      }
+
+      main {
+        padding: 2rem 1.5rem;
+        border-radius: 1.25rem;
+        background: var(--card);
+        box-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 32px rgb(0 0 0 / 0.06);
+      }
+
+      form,
+      section {
+        display: none;
+        gap: 1.25rem;
+      }
+
+      [data-state="ask"] #ask,
+      [data-state="sent"] #sent,
+      [data-state="gone"] #gone,
+      [data-state="broken"] #broken,
+      [data-state="old"] #old {
+        display: grid;
+      }
+
+      svg {
+        width: 2.5rem;
+        height: 2.5rem;
+        fill: none;
+        stroke: currentColor;
+        stroke-width: 1.75;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+      }
+
+      h1 {
+        font-size: 1.75rem;
+        line-height: 1.2;
+        overflow-wrap: anywhere;
+      }
+
+      .lead {
+        margin-bottom: -1rem;
+        color: var(--muted);
+      }
+
+      #fields {
+        display: grid;
+        gap: 1rem;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+      }
+
+      .input {
+        display: flex;
+        border: 1.5px solid var(--line);
+        border-radius: 0.75rem;
+      }
+
+      .input:focus-within {
+        border-color: var(--text);
+      }
+
+      input {
+        flex: 1;
+        width: 100%;
+        padding: 0.8rem 1rem;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        outline: none;
+      }
+
+      button {
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .reveal {
+        padding: 0 1rem;
+        background: none;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .send {
+        margin-top: 0.25rem;
+        padding: 0.95rem;
+        border-radius: 0.75rem;
+        background: var(--text);
+        color: var(--card);
+        font-weight: 600;
+      }
+
+      .send:disabled {
+        opacity: 0.5;
+        cursor: default;
+      }
+
+      .note {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+
+      .error {
+        color: var(--error);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <form id="ask">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+        <p class="lead"><span data-from>Your assistant</span> is asking for</p>
+        <h1 id="name"></h1>
+        <div id="fields"></div>
+        <button class="send" type="submit">Send to <span data-from>your assistant</span></button>
+        <p class="error" role="alert" hidden>That didn't go through. Check your internet and try again.</p>
+        <p class="note">It's locked on this device before it's sent. Only <span data-from>your assistant</span> can unlock it.</p>
+      </form>
+
+      <section id="sent">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m8 12.5 2.75 2.75L16.5 9.5" /></svg>
+        <h1>Sent</h1>
+        <p>Only <span data-from>your assistant</span> can read it. You can close this page now.</p>
+      </section>
+
+      <section id="gone">
+        <h1>This link doesn't work anymore</h1>
+        <p>It was already used, or it expired. Ask <span data-from>your assistant</span> for a new one.</p>
+      </section>
+
+      <section id="broken">
+        <h1>This link is incomplete</h1>
+        <p>Copy the whole link from the message and open it again.</p>
+      </section>
+
+      <section id="old">
+        <h1>This browser is too old</h1>
+        <p>Open the link in an up-to-date browser, like Safari, Chrome or Firefox.</p>
+      </section>
+    </main>
+
+    <template id="field">
+      <div>
+        <label></label>
+        <div class="input">
+          <input required autocapitalize="off" autocorrect="off" spellcheck="false" />
+          <button class="reveal" type="button" hidden>Show</button>
+        </div>
+      </div>
+    </template>
+
+    <script type="module"></script>
+  </body>
+</html>
