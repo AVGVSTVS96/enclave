@@ -1,0 +1,239 @@
+@font-face {
+  font-family: Geist;
+  src: url(../fonts/geist.woff2) format("woff2");
+  font-weight: 400 700;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url(../fonts/geist-mono.woff2) format("woff2");
+  font-weight: 500;
+}
+
+:root {
+  --accent: #2b3ff0;
+  --on-accent: #fff;
+  --bg: var(--accent);
+  --fg: var(--on-accent);
+  --outside: #eceef2;
+  --ink: #0b0d14;
+  --input: #fff;
+  --input-text: #10131a;
+  --mono: "Geist Mono", ui-monospace, monospace;
+  font: 18px/1.5 Geist, system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: color-mix(in oklab, var(--accent) 45%, #000);
+    --fg: #fff;
+    --outside: #15161a;
+    --input: #0d0e12;
+    --input-text: #f1f2f6;
+  }
+}
+
+[data-state="gone"],
+[data-state="broken"],
+[data-state="old"] {
+  --bg: var(--outside);
+  --fg: var(--ink);
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-state="gone"],
+  [data-state="broken"],
+  [data-state="old"] {
+    --fg: #f1f2f6;
+  }
+}
+
+body {
+  padding: max(2rem, env(safe-area-inset-top)) 1.25rem max(1.25rem, env(safe-area-inset-bottom));
+  background: var(--bg);
+  color: var(--fg);
+  transition: background-color 0.4s;
+}
+
+form,
+section {
+  gap: 1.25rem;
+}
+
+section {
+  margin-block: auto;
+}
+
+h1 {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.045em;
+}
+
+#sent h1 {
+  font-size: 4rem;
+}
+
+.lead {
+  margin-bottom: -0.75rem;
+  font-size: 0.9rem;
+  opacity: 0.8;
+}
+
+section p {
+  opacity: 0.85;
+}
+
+#fields {
+  gap: 1rem;
+}
+
+label {
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.input {
+  border-radius: 0.7rem;
+  background: var(--input);
+  color: var(--input-text);
+  box-shadow: inset 0 0 0 2px transparent;
+  transition: box-shadow 0.15s;
+}
+
+.input:focus-within {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+input {
+  padding: 0.85rem 1rem;
+}
+
+.reveal {
+  padding: 0 1rem;
+  background: none;
+  color: inherit;
+  font-size: 0.8rem;
+  opacity: 0.55;
+}
+
+.send {
+  margin-top: 0.5rem;
+  padding: 1.05rem;
+  border-radius: 0.8rem;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+}
+
+.error {
+  font-weight: 600;
+}
+
+footer {
+  gap: 0.75rem;
+}
+
+[data-state="ask"] .route {
+  display: none;
+}
+
+.route {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+}
+
+.route::before,
+.route::after {
+  content: "";
+  position: absolute;
+  top: calc(0.5rem - 1.5px);
+  left: 0.5rem;
+  right: 0.5rem;
+  height: 3px;
+  background: currentColor;
+}
+
+.route::before {
+  opacity: 0.3;
+}
+
+.route::after {
+  right: 50%;
+}
+
+.route li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+}
+
+.route li:first-child {
+  justify-items: start;
+}
+
+.route li:last-child {
+  justify-items: end;
+}
+
+.route li::before {
+  content: "";
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.route .agent::before {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2.5px currentColor;
+}
+
+.route b {
+  max-width: 6rem;
+  overflow: hidden;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.route [data-show] {
+  display: none;
+}
+
+[data-state="gone"] .route {
+  opacity: 0.35;
+}
+
+[data-state="gone"] .route::before {
+  background: repeating-linear-gradient(90deg, currentColor 0 6px, transparent 6px 12px);
+  opacity: 1;
+}
+
+[data-state="gone"] .route::after {
+  display: none;
+}
+
+[data-state="gone"] .route li::before {
+  background: var(--bg);
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.spec {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.5em;
+  font: 500 0.65rem var(--mono);
+  white-space: nowrap;
+  opacity: 0.75;
+}
+
+.spec [data-show]::after {
+  content: " ·";
+}

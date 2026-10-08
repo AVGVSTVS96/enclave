@@ -38,6 +38,7 @@ function ask(name: string, fields: string[], publicKey: Uint8Array<ArrayBuffer>)
     const response = await fetch(location.pathname, { method: "POST", body }).catch(() => undefined)
     send.disabled = false
     if (response?.ok) {
+      for (const bytes of document.querySelectorAll(".bytes")) bytes.textContent = String(body.length)
       form.reset()
       root.dataset.state = "sent"
     } else if (response?.status === 410) root.dataset.state = "gone"
