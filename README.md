@@ -3,8 +3,14 @@
 Your AI agent needs your Netflix password. Instead of asking in chat, it sends you a link. You open it, type the password (or let your password manager fill it) and tap **Send**. It's locked in your browser before it leaves, so only your agent can open it. The agent keeps it in a vault of its own and uses it later without ever seeing it.
 
 <p>
-  <img src="assets/light.png" width="300" alt="The enclave page in light mode: hex is asking for Netflix, with email and password fields and a Send to hex button" />
-  <img src="assets/dark.png" width="300" alt="The same page in dark mode" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/ledger-dark.png" />
+    <img src="assets/ledger-light.png" width="300" alt="The enclave page in the ledger theme: hex is asking for Netflix, with email and password fields, a Send to hex button, and a ledger showing who holds the secret" />
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/field-dark.png" />
+    <img src="assets/field-light.png" width="300" alt="The same page in the field theme, on a full blue background" />
+  </picture>
 </p>
 
 ```
@@ -267,7 +273,7 @@ The vault keeps each item encrypted in `~/.enclave/items`, sealed to the vault's
 
 What enclave can't protect against:
 
-- **Whoever runs the relay sends you the page.** Your browser downloads the page, including the code that locks your password, from the relay each time you open a link. What the relay stores can't be read, but if someone took over the relay's Convex account, they could change the page to copy what you type before locking it. Every website that encrypts in your browser works this way. The page is about 300 lines in [`page/`](page) plus the encryption in [`src/hpke.ts`](src/hpke.ts), served with a strict Content Security Policy, so you can read exactly what it runs. If you'd rather trust nobody's relay, [host your own](#host-your-own).
+- **Whoever runs the relay sends you the page.** Your browser downloads the page, including the code that locks your password, from the relay each time you open a link. What the relay stores can't be read, but if someone took over the relay's Convex account, they could change the page to copy what you type before locking it. Every website that encrypts in your browser works this way. The page's script is under 100 lines in [`page/page.ts`](page/page.ts) plus the encryption in [`src/hpke.ts`](src/hpke.ts), served as one file with a strict Content Security Policy, so you can read exactly what it runs. If you'd rather trust nobody's relay, [host your own](#host-your-own).
 - **Anyone with the link can answer it first.** They still can't read anything, but they could send a fake answer. If that happens, the page says "This link doesn't work anymore" when you open it.
 - **Phishing.** A link can say anyone is asking. Only send secrets to agents you asked for help.
 - **An agent that wants to see a secret can.** enclave keeps secrets out of the chat and out of tool results, and `run` hides their exact values in output. But an agent with a shell on the same computer could still read its own vault. enclave stops secrets from leaking by accident, not a model that's trying.
@@ -285,6 +291,21 @@ npm run deploy
 
 Then point agents at it with `ENCLAVE_RELAY=https://<your-deployment>.convex.cloud`.
 
+### Themes
+
+The page comes in two themes, both following the system's light or dark mode:
+
+- **ledger** (the default): calm and white. A highlighter marks what's readable, and a small ledger shows who holds the secret: you, the relay, or your agent.
+- **field**: the whole screen is one color. After you send, a track shows where it went, and a used link turns gray.
+
+Pick one, and optionally one color, when you deploy:
+
+```sh
+ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy
+```
+
+`ENCLAVE_COLOR` is ledger's highlight or field's background, and text on it switches between white and ink to stay readable. To make your own theme, copy [`page/themes/ledger.css`](page/themes/ledger.css) and point `ENCLAVE_THEME` at your file. A theme is plain CSS over the page's fixed markup, and any fonts or images it links to get built into the page, which loads nothing from anywhere else.
+
 ## Develop
 
 ```sh
@@ -296,7 +317,7 @@ npm run build    # bundles the CLI, SDK and types into dist/
 | Path | What's there |
 | --- | --- |
 | `convex/` | The relay: requests, rate limits and two HTTP routes, in 133 lines |
-| `page/` | The page people see, built into one HTML file by `scripts/page.ts` |
+| `page/` | The page people see and its two themes, built into one HTML file by `scripts/page.ts` |
 | `src/hpke.ts` | The encryption, shared by the page and the agent |
 | `src/vault.ts` | `ask`, `wait`, `get`, `run` and the rest of the SDK |
 | `src/mcp.ts` | The MCP server |
