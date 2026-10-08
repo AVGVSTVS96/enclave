@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en" class="ledger">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<title>enclave · brand</title>
+<link rel="icon" href="logo/favicon.svg" />
+<link rel="stylesheet" href="tokens.css" />
+<style>
+  * { box-sizing: border-box; margin: 0; }
+  html { background: var(--page); color: var(--text); font: 17px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+  body { display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(4rem, 9vw, 7rem); padding: 0 0 6rem; }
+  .wrap { --pad: clamp(1.25rem, 4vw, 3rem); width: min(72rem, 100%); margin: 0 auto; padding: 0 var(--pad); }
+  .ledger { color: var(--text); }
+  h2 { font-size: clamp(1.6rem, 3vw, 2rem); line-height: 1.1; font-weight: 600; letter-spacing: -0.025em; }
+  .sub { color: var(--muted); max-width: 52ch; margin-top: 0.4rem; }
+  .head { margin-bottom: 2rem; }
+  code, .mono { font-family: var(--mono); font-weight: 500; }
+  mark { background: var(--accent); color: var(--on-accent); border-radius: 3px; padding: 0 3px; }
+  picture, img { display: block; }
+  .scroll { display: flex; gap: 14px; overflow-x: auto; margin-inline: calc(-1 * var(--pad)); padding: 0 var(--pad) 4px; scroll-padding-inline: var(--pad); scroll-snap-type: x mandatory; scrollbar-width: none; }
+  .scroll > * { scroll-snap-align: start; }
+  .sub, .say, .dir p, .note { text-wrap: pretty; }
+  .sub code { font-size: 0.88em; }
+  .cap { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+  .top { display: flex; justify-content: space-between; align-items: center; padding-top: 1.5rem; }
+  .top span { font-size: 14px; color: var(--muted); }
+
+  .hero { display: grid; gap: 2rem; }
+  .hero .say { font-size: clamp(1.2rem, 2.2vw, 1.5rem); line-height: 1.35; letter-spacing: -0.01em; max-width: 34ch; }
+  .anat { display: grid; grid-template-columns: max-content minmax(0, 1fr); }
+  .anat .relay p { width: 0; min-width: 100%; }
+  .anat code { font-size: 15px; line-height: 1.9; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+  .anat .relay code { color: var(--muted); }
+  .anat p { font-size: 14px; color: var(--muted); padding: 8px 16px 0 0; border-top: 2px solid var(--line); margin-top: 6px; }
+  .anat .frag p { border-color: var(--accent); }
+  .anat b { color: var(--text); font-weight: 600; }
+  @media (max-width: 720px) {
+    .anat { grid-template-columns: minmax(0, 1fr); row-gap: 1.25rem; }
+    .anat .relay p { width: auto; }
+  }
+
+  /* phones */
+  .ph { flex: none; width: 228px; height: 480px; border-radius: 28px; padding: 26px 18px 18px; display: flex; flex-direction: column; gap: 12px; overflow: hidden; font-family: var(--sans); }
+  .ph label { font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px; }
+  .ph .in { height: 44px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; font-size: 14px; }
+  .ph .grow { flex: 1; }
+  .ph .lead { font-size: 13px; margin-bottom: -6px; }
+  .ph .say { font-size: 13.5px; line-height: 1.45; }
+  .L { background: var(--card); color: var(--text); box-shadow: inset 0 0 0 1px var(--line); }
+  .L h1 { font-size: 30px; line-height: 1.05; font-weight: 600; letter-spacing: -0.025em; }
+  .L .lead, .L .say, .L .in span { color: var(--muted); }
+  .L .in span { font-size: 12px; }
+  .L .in { box-shadow: inset 0 0 0 1.5px var(--line); border-radius: 9px; }
+  .L .btn { height: 48px; border-radius: 9px; background: var(--text); color: var(--card); display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+  .L .spec { font: 500 9.5px var(--mono); color: var(--muted); padding-top: 6px; border-top: 1px solid var(--line); }
+
+  .F { background: var(--bg); color: var(--fg); }
+  .F h1 { font-size: 40px; line-height: 0.95; font-weight: 700; letter-spacing: -0.045em; }
+  .F .lead, .F .say, .F .spec { color: var(--muted); }
+  .F .in { background: var(--input); color: var(--input-text); border-radius: 10px; }
+  .F .in span { font-size: 12px; color: var(--input-muted); }
+  .F .btn { height: 52px; border-radius: 12px; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+  .F .spec { font: 500 9.5px var(--mono); }
+  .band .F { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fg) 28%, transparent); }
+
+
+  /* the ledger, as a component */
+  .rows { display: grid; font-size: 12px; }
+  .rows div { display: grid; grid-template-columns: 42px 1fr; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); align-items: baseline; }
+  .rows b { font-weight: 600; }
+  .rows span { font: 500 10.5px var(--mono); color: var(--muted); }
+  .rows mark { color: var(--on-accent); }
+
+  /* the track, as a component */
+  .track { display: grid; grid-template-columns: auto 1fr auto 1fr auto; align-items: center; }
+  .track i { width: 16px; height: 16px; border-radius: 50%; box-shadow: inset 0 0 0 2.5px currentColor; }
+  .track i.on { background: currentColor; }
+  .track s { position: relative; height: 3px; background: color-mix(in srgb, currentColor 30%, transparent); }
+  .track s::after { content: ""; position: absolute; inset: 0; background: currentColor; transform: scaleX(0); transform-origin: left; }
+  .track s.on::after { transform: none; }
+  .track-l { display: grid; grid-template-columns: repeat(3, 1fr); font-size: 11px; margin-top: 6px; }
+  .track-l span:nth-child(2) { text-align: center; }
+  .track-l span:last-child { text-align: right; }
+  .F .track-l { color: var(--muted); }
+  .F.gone .track, .F.gone .track-l { color: var(--muted); }
+
+  /* field band */
+  .band { background: var(--bg); color: var(--fg); padding: clamp(3rem, 7vw, 5rem) 0; font-family: var(--sans); }
+  .band h2 { font-weight: 700; letter-spacing: -0.045em; font-size: clamp(2rem, 4vw, 2.75rem); }
+  .band .sub { color: var(--muted); }
+  .band .cap { color: var(--muted); }
+  .fhero { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: end; margin-bottom: 2.5rem; }
+  .fhero .say { color: var(--muted); max-width: 30ch; margin-top: 1rem; font-size: 16px; }
+  .term { min-width: 0; background: var(--ink); color: #e9eaf0; border-radius: 14px; padding: 18px; font: 500 12.5px/1.75 var(--mono); }
+  .term .p { color: #9a9eab; }
+  .term .u { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #9a9eab; }
+  @media (max-width: 760px) { .fhero { grid-template-columns: minmax(0, 1fr); } }
+
+  /* components */
+  .comp { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { border-radius: 20px; padding: 24px; display: grid; gap: 18px; align-content: start; }
+  .card.L { box-shadow: inset 0 0 0 1px var(--line); }
+  .card .rows { font-size: 15px; }
+  .card .rows div { grid-template-columns: 64px 1fr; padding: 10px 0; }
+  .card .rows span { font-size: 13px; }
+  .card .track i { width: 20px; height: 20px; box-shadow: inset 0 0 0 3px currentColor; }
+  .card .track s { height: 3px; }
+  .card .track-l { font-size: 13px; }
+  .card h3 { font-size: 15px; font-weight: 600; }
+  .card.F h3 { font-weight: 700; letter-spacing: -0.02em; }
+  .card .note { font-size: 14px; color: var(--muted); }
+  .card.F .note { color: var(--muted); }
+  .demo { display: flex; gap: 12px; align-items: center; margin-top: 14px; }
+  .demo button { font: 600 15px var(--sans); height: 44px; padding: 0 20px; border: 0; border-radius: 9px; background: var(--text); color: var(--card); cursor: pointer; }
+  .demo span { font-size: 14px; color: var(--muted); }
+  @media (max-width: 760px) { .comp { grid-template-columns: minmax(0, 1fr); } }
+
+  /* motion: it follows state only */
+  [data-motion] mark { background: linear-gradient(var(--accent), var(--accent)) no-repeat left / 100% 100%; color: var(--on-accent); transition: background-size 240ms cubic-bezier(.2, .7, .2, 1), color 120ms; }
+  [data-motion] mark.off { background-size: 0% 100%; color: var(--muted); }
+  [data-motion] .track s::after { transition: transform 320ms cubic-bezier(.2, .7, .2, 1); }
+  [data-motion] .track i.on { transition: background-color 120ms 260ms; }
+  @media (prefers-reduced-motion: reduce) { [data-motion] * { transition: none !important; } }
+
+  /* type */
+  .type { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .spec-card { border-radius: 20px; padding: 24px; display: grid; gap: 22px; align-content: start; box-shadow: inset 0 0 0 1px var(--line); }
+  .spec-card.F { box-shadow: none; }
+  .t-meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+  .F .t-meta { color: var(--muted); }
+  @media (max-width: 760px) { .type { grid-template-columns: minmax(0, 1fr); } }
+
+  /* tokens */
+  .tok { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 32px; align-items: start; }
+  .tok table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .tok th { text-align: left; font-weight: 600; font-size: 13px; padding: 0 0 8px; border-bottom: 1px solid var(--text); }
+  .tok td { padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .tok td:first-child { width: 72px; }
+  .tok .sw { display: inline-flex; border-radius: 6px; overflow: hidden; }
+  .tok .sw i { width: 28px; height: 28px; display: block; background: var(--v); box-shadow: inset 0 0 0 1px rgb(128 128 128 / 0.25); }
+  .tok .use { color: var(--muted); font-size: 13.5px; }
+  .tok td:nth-child(2) { white-space: nowrap; padding-right: 20px; }
+  .tok code { font-size: 12.5px; }
+  .tok .hex { font: 500 11.5px var(--mono); color: var(--muted); display: block; }
+  @media (max-width: 860px) { .tok { grid-template-columns: minmax(0, 1fr); } }
+  @media (max-width: 520px) {
+    .tok tr { display: grid; grid-template-columns: 72px 1fr; border-bottom: 1px solid var(--line); padding: 8px 0; }
+    .tok thead tr { border-bottom: 1px solid var(--text); padding-top: 0; }
+    .tok td, .tok th { border: 0; padding: 0; }
+    .tok td:first-child { grid-row: span 2; }
+    .tok td.use { grid-column: 2; padding-top: 4px; }
+  }
+
+  /* marks */
+  .marks { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .panel { border-radius: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-content: start; }
+  .panel > img { width: min(100%, 15rem); height: auto; }
+  .panel.light { background: #fbfbf8; color: #161616; box-shadow: inset 0 0 0 1px #e6e6df; }
+  .panel.dark { background: #111110; color: #f1f1ec; box-shadow: inset 0 0 0 1px #2e2e2b; }
+  .panel .sizes { display: flex; gap: 20px; align-items: end; flex-wrap: wrap; }
+  .panel .sizes figure { margin: 0; display: grid; gap: 6px; justify-items: start; }
+  .panel figcaption { font-size: 12px; opacity: 0.7; }
+  .panel.fieldp { background: #2b3ff0; color: #fff; }
+  .panel.paperp { background: #eceef2; color: #10131a; }
+  @media (max-width: 760px) { .marks { grid-template-columns: minmax(0, 1fr); } }
+
+  /* directions */
+  .dirs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .dir { border-radius: 20px; padding: 22px; display: grid; gap: 14px; align-content: start; box-shadow: inset 0 0 0 1px var(--line); background: var(--card); }
+  .dir .art { height: 96px; display: grid; place-items: center start; }
+  .dir .art img { max-height: 64px; max-width: 100%; }
+  .dir h3 { font-size: 16px; font-weight: 600; }
+  .dir p { font-size: 14px; color: var(--muted); }
+  .dir .pick { color: var(--on-accent); }
+  @media (max-width: 1100px) { .dirs { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 560px) { .dirs { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+
+<div class="wrap top">
+  <picture><source srcset="logo/ledger-wordmark-dark.svg" media="(prefers-color-scheme: dark)" /><img src="logo/ledger-wordmark.svg" height="28" alt="enclave" /></picture>
+  <span>brand, Oct 2026</span>
+</div>
+
+<section class="wrap hero">
+  <picture><source srcset="logo/ledger-wordmark-dark.svg" media="(prefers-color-scheme: dark)" /><img src="logo/ledger-wordmark.svg" style="height: clamp(52px, 8vw, 84px); width: auto" alt="enclave" /></picture>
+  <p class="say">Your agent asks for a password with a link. You fill it in, and the server in the middle never even learns it was Netflix.</p>
+  <div class="anat">
+    <div class="relay"><code>moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg</code><p><b>The relay</b> sees this part, and holds 304 locked bytes for at most 30 minutes.</p></div>
+    <div class="frag"><code><mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=wOoTp0jZtO8Bu2VcKTu2K7pw8K_MW3QLBJnJVWBwLU8</mark></code><p><b>Only your browser</b> sees this part: who's asking, what for, and hex's lock.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="head"><h2>ledger</h2><p class="sub">Calm and exact. The highlight means "readable": it sits on whoever can read your secret right now.</p></div>
+  <div class="scroll" id="ledger-phones"></div>
+</section>
+
+<section class="band field">
+  <div class="wrap">
+    <div class="fhero">
+      <div>
+        <img src="logo/field-wordmark-white.svg" style="width: min(26rem, 100%); height: auto" alt="enclave" />
+        <p class="say">Loud and simple. The form sits on a field of color, the route only shows up after you send, and a dead link drops to gray.</p>
+      </div>
+      <div class="term"><span class="p">$</span> enclave ask Netflix email password<span class="u">https://moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=wOoTp0jZtO8Bu2VcKTu2K7pw8K_MW3QLBJnJVWBwLU8</span><span class="p">$</span> enclave wait Netflix<br />saved Netflix: email, password</div>
+    </div>
+    <div class="scroll" id="field-phones"></div>
+  </div>
+</section>
+
+<section class="wrap" data-motion id="motion">
+  <div class="head"><h2>Where your secret is, from real state</h2><p class="sub">Both themes show the same three stops. Nothing moves on a timer: the highlight moves when the state changes, and the track fills when the send succeeds.</p></div>
+  <div class="comp">
+    <div class="card L">
+      <h3>The ledger</h3>
+      <div class="rows">
+        <div><b>you</b><span><mark data-on="ask">what you type</mark><mark class="ask-hide" data-on="">cleared</mark></span></div>
+        <div><b>relay</b><span><mark data-on="" data-ask="nothing yet" data-sent="304 locked bytes">nothing yet</mark></span></div>
+        <div><b>hex</b><span><mark data-on="sent">the only key</mark></span></div>
+      </div>
+      <p class="note">One highlight, on whoever can read it.</p>
+    </div>
+    <div class="card F field">
+      <h3>The track</h3>
+      <div><div class="track"><i class="on"></i><s data-on="sent"></s><i data-on="sent"></i><s></s><i></i></div><div class="track-l"><span>you</span><span>relay</span><span>hex</span></div></div>
+      <p class="note">Filled means it got there. hex's stop stays open, because this page never hears back from hex.</p>
+    </div>
+  </div>
+  <div class="demo"><button id="send">Send</button><span id="state">ask</span></div>
+</section>
+
+<section class="wrap">
+  <div class="head"><h2>Type</h2><p class="sub">One sans per theme for everything a person reads. Mono only for real data: links, bytes, the cipher.</p></div>
+  <div class="type">
+    <div class="spec-card L">
+      <div><div style="font-size: 44px; line-height: 1.05; font-weight: 600; letter-spacing: -0.025em">Netflix</div><p class="t-meta">Instrument Sans 600 · 44/1.05 · −0.025em · display</p></div>
+      <div><div style="font-size: 30px; line-height: 1.1; font-weight: 600; letter-spacing: -0.025em">This link doesn't work anymore</div><p class="t-meta">600 · 30/1.1 · title</p></div>
+      <div><div style="font-size: 17px">Only hex can read it. You can close this page now.</div><p class="t-meta">400 · 17/1.55 · body</p></div>
+      <div><div class="mono" style="font-size: 13px">304 locked bytes&nbsp;· HPKE&nbsp;· X25519&nbsp;· AES-128-GCM</div><p class="t-meta">JetBrains Mono 500 · 13 · data only</p></div>
+    </div>
+    <div class="spec-card F field">
+      <div><div style="font-size: 52px; line-height: 0.95; font-weight: 700; letter-spacing: -0.045em">Netflix</div><p class="t-meta">Geist 700 · 52/0.95 · −0.045em · display</p></div>
+      <div><div style="font-size: 31px; line-height: 1; font-weight: 700; letter-spacing: -0.04em">This link doesn't work anymore</div><p class="t-meta">700 · 31/1 · title</p></div>
+      <div><div style="font-size: 16px">Only hex can read it. You can close this page now.</div><p class="t-meta">400 · 16/1.5 · body</p></div>
+      <div><div class="mono" style="font-size: 13px">304 locked bytes&nbsp;· HPKE X25519</div><p class="t-meta">Geist Mono 500 · 13 · data only</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="head"><h2>Tokens</h2><p class="sub">Dark is the same tokens swapped, and follows the system. Each theme takes one color from <code>ENCLAVE_COLOR</code>: ledger's highlight, field's background. Both are <code>--accent</code>.</p></div>
+  <div class="tok">
+    <table data-theme="ledger"><thead><tr><th>light · dark</th><th>ledger</th><th></th></tr></thead><tbody></tbody></table>
+    <table data-theme="field"><thead><tr><th>light · dark</th><th>field</th><th></th></tr></thead><tbody></tbody></table>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="head"><h2>Marks</h2><p class="sub">Drawn from the fonts by <code>logo/gen.mjs</code>. On dark, the part of the <code>#</code> on the bar stays ink, like any text under a highlighter.</p></div>
+  <div class="marks">
+    <div class="panel light"><img src="logo/ledger-wordmark.svg" alt="enclave" /><div class="sizes" data-src="logo/ledger-mark.svg"></div></div>
+    <div class="panel dark"><img src="logo/ledger-wordmark-dark.svg" alt="enclave" /><div class="sizes" data-src="logo/ledger-mark-dark.svg"></div></div>
+    <div class="panel fieldp"><img src="logo/field-wordmark.svg" style="width: min(100%, 15rem)" alt="enclave" /><div class="sizes" data-src="logo/field-mark.svg"></div></div>
+    <div class="panel paperp"><img src="logo/field-wordmark-paper.svg" style="width: min(100%, 15rem)" alt="enclave" /><div class="sizes" data-src="logo/field-mark-paper.svg"></div></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <div class="head"><h2>Directions</h2><p class="sub">Four marks were on the table. Two ship, one per theme.</p></div>
+  <div class="dirs">
+    <div class="dir"><div class="art"><picture><source srcset="logo/explore-drawn-dark.svg" media="(prefers-color-scheme: dark)" /><img src="logo/explore-drawn.svg" height="64" alt="" /></picture></div><h3>A · the drawn #</h3><p>The approved board's mark: four round strokes. Close, but hand&#8209;set strokes don't match the type next to them.</p></div>
+    <div class="dir"><div class="art"><picture><source srcset="logo/ledger-mark-dark.svg" media="(prefers-color-scheme: dark)" /><img src="logo/ledger-mark.svg" height="64" alt="" /></picture></div><h3>B · the # on a bar <mark class="pick">ledger</mark></h3><p>Instrument Sans Bold's <code>#</code>, the house face. It leans like the board's, and at 700 all four holes stay open at 16px.</p></div>
+    <div class="dir"><div class="art"><img src="logo/field-mark-paper.svg" height="64" alt="" /></div><h3>C · the track <mark class="pick">field</mark></h3><p>You, relay, hex. Two stops filled, the last one open: the state right after you send.</p></div>
+    <div class="dir"><div class="art"><picture><source srcset="logo/explore-fragment-dark.svg" media="(prefers-color-scheme: dark)" /><img src="logo/explore-fragment.svg" height="40" alt="" /></picture></div><h3>D · #enclave</h3><p>The whole name as a fragment. It reads as a hashtag, so no.</p></div>
+  </div>
+</section>
+
+<script>
+  const fields = `<div><label>Email</label><div class="in">grandma@example.com</div></div>
+    <div><label>Password</label><div class="in">••••••••••<span>Show</span></div></div>`
+  const cipher = "HPKE · X25519 · AES-128-GCM"
+  const rows = list => `<div class="rows">${list.map(([who, what, on]) => `<div><b>${who}</b><span>${on ? `<mark>${what}</mark>` : what}</span></div>`).join("")}</div>`
+  const track = n => `<div><div class="track">${[0, 1, 2].map(i => `<i class="${i < n ? "on" : ""}"></i>${i < 2 ? `<s class="${i < n - 1 ? "on" : ""}"></s>` : ""}`).join("")}</div><div class="track-l"><span>you</span><span>relay</span><span>hex</span></div></div>`
+  const phone = (cls, body, cap) => `<div><div class="ph ${cls}">${body}</div><p class="cap">${cap}</p></div>`
+
+  document.getElementById("ledger-phones").innerHTML = [
+    phone("L", `<p class="lead">hex is asking for</p><h1>Netflix</h1>${fields}<div class="btn">Send to hex</div><div class="grow"></div>${rows([["you", "what you type", 1], ["relay", "nothing yet"], ["hex", "the only key"]])}<p class="spec">${cipher}</p>`, "ask"),
+    phone("L", `<h1>Sent</h1><p class="say">Only hex can read it. You can close this page now.</p><div class="grow"></div>${rows([["you", "cleared"], ["relay", "304 locked bytes"], ["hex", "the only key", 1]])}<p class="spec">${cipher}</p>`, "sent"),
+    phone("L", `<h1 style="font-size: 25px">This link doesn't work anymore</h1><p class="say">It was already used, or it expired. Ask hex for a new one.</p><div class="grow"></div>${rows([["relay", "deleted"]])}<p class="spec">${cipher}</p>`, "gone"),
+    phone("L", `<p class="lead">hex is asking for</p><h1>Netflix</h1>${fields}<div class="btn">Send to hex</div><div class="grow"></div>${rows([["you", "what you type", 1], ["relay", "nothing yet"], ["hex", "the only key"]])}<p class="spec">${cipher}</p>`, "ENCLAVE_COLOR=#7ef0b4").replace('class="ph L"', 'class="ph L" style="--accent: #7ef0b4"'),
+  ].join("")
+
+  document.getElementById("field-phones").innerHTML = [
+    phone("F", `<p class="lead">hex is asking for</p><h1>Netflix</h1>${fields}<div class="grow"></div><div class="btn">Send to hex</div><p class="spec">${cipher}</p>`, "ask"),
+    phone("F", `<div class="grow"></div><h1 style="font-size: 52px">Sent</h1><p class="say">Only hex can read it. You can close this page now.</p><div class="grow"></div>${track(2)}<p class="spec">304 locked bytes · HPKE X25519</p>`, "sent"),
+    phone("F gone", `<div class="grow"></div><h1 style="font-size: 31px">This link doesn't work anymore</h1><p class="say">It was already used, or it expired. Ask hex for a new one.</p><div class="grow"></div>${track(0)}<p class="spec">deleted</p>`, "gone"),
+    phone("F", `<p class="lead">hex is asking for</p><h1>Netflix</h1>${fields}<div class="grow"></div><div class="btn">Send to hex</div><p class="spec">${cipher}</p>`, "ENCLAVE_COLOR=#ff4a2e").replace('class="ph F"', 'class="ph F field" style="--accent: #ff4a2e; --on-accent: #10131a"'),
+  ].join("")
+
+  for (const el of document.querySelectorAll(".sizes")) {
+    el.innerHTML = [16, 32, 48, 96].map(s => `<figure><img src="${el.dataset.src}" width="${s}" height="${s}" alt="" /><figcaption>${s}</figcaption></figure>`).join("")
+  }
+
+  const ctx = Object.assign(document.createElement("canvas"), { width: 1, height: 1 }).getContext("2d", { willReadFrequently: true })
+  const hexOf = el => {
+    ctx.clearRect(0, 0, 1, 1)
+    ctx.fillStyle = getComputedStyle(el).backgroundColor
+    ctx.fillRect(0, 0, 1, 1)
+    return "#" + [...ctx.getImageData(0, 0, 1, 1).data.slice(0, 3)].map(v => v.toString(16).padStart(2, "0")).join("")
+  }
+  const uses = {
+    ledger: { accent: "the highlight: readable here. <code>ENCLAVE_COLOR</code>", "on-accent": "text on the highlight, in both themes", page: "the page", card: "the card the form sits on", text: "text, the Send button", muted: "secondary text, data", line: "hairlines, input borders", error: "what went wrong" },
+    field: { bg: "the field: <code>ENCLAVE_COLOR</code>, and in dark mixed 75% with black", fg: "text on the field", muted: "secondary text on the field", input: "inputs", "input-text": "what you type", "input-muted": "hints, Show", ink: "Send, and text on a dead link", outside: "a dead link, out of the color" },
+  }
+  for (const table of document.querySelectorAll("[data-theme]")) {
+    const theme = table.dataset.theme
+    table.tBodies[0].innerHTML = Object.entries(uses[theme]).map(([t, use]) =>
+      `<tr><td><span class="sw"><i class="${theme} light" style="--v: var(--${t})"></i><i class="${theme} dark" style="--v: var(--${t})"></i></span></td><td><code>--${t}</code><span class="hex"></span></td><td class="use">${use}</td></tr>`).join("")
+    for (const row of table.tBodies[0].rows) {
+      const [light, dark] = row.querySelectorAll("i")
+      const [a, b] = [hexOf(light), hexOf(dark)]
+      row.querySelector(".hex").textContent = a === b ? a : `${a} · ${b}`
+    }
+  }
+
+  const motion = document.getElementById("motion")
+  const send = document.getElementById("send")
+  const label = document.getElementById("state")
+  const render = state => {
+    label.textContent = state
+    send.textContent = state === "ask" ? "Send" : "Start over"
+    for (const m of motion.querySelectorAll(".rows mark")) {
+      if (m.dataset.ask) m.textContent = m.dataset[state]
+      m.classList.toggle("off", m.dataset.on !== state)
+    }
+    motion.querySelector(".ask-hide").hidden = state === "ask"
+    motion.querySelector("[data-on=ask]").hidden = state !== "ask"
+    for (const el of motion.querySelectorAll(".track [data-on]")) el.classList.toggle("on", state === "sent")
+  }
+  send.addEventListener("click", () => render(label.textContent === "ask" ? "sent" : "ask"))
+  render("ask")
+</script>
+</body>
+</html>

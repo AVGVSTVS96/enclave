@@ -1,0 +1,44 @@
+@font-face { font-family: "Instrument Sans"; src: url("fonts/instrument-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("fonts/jetbrains-mono.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+@font-face { font-family: "Geist"; src: url("fonts/geist.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url("fonts/geist-mono.woff2") format("woff2"); font-weight: 500; font-display: swap; }
+
+.ledger, .field { color-scheme: light dark; }
+.light { color-scheme: light; }
+.dark { color-scheme: dark; }
+
+.ledger {
+  --accent: #ffe04a;
+  --on-accent: #161616;
+  --page: light-dark(#f6f6f3, #0d0d0c);
+  --card: light-dark(#ffffff, #171716);
+  --text: light-dark(#161616, #f1f1ec);
+  --muted: light-dark(#6c6c66, #9d9d95);
+  --line: light-dark(#e4e4dd, #2c2c29);
+  --error: light-dark(#b42318, #fda29b);
+  --sans: "Instrument Sans", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+.field {
+  --accent: #2b3ff0;
+  --on-accent: #ffffff;
+  --deep: color-mix(in oklab, var(--accent) 75%, #000);
+  --bg: light-dark(var(--accent), var(--deep));
+  --fg: light-dark(var(--on-accent), #ffffff);
+  --muted: color-mix(in srgb, var(--fg) 85%, var(--bg));
+  --input: light-dark(#ffffff, #0d0e12);
+  --input-text: light-dark(#10131a, #f1f2f6);
+  --input-muted: light-dark(#5d6170, #9a9eab);
+  --ink: #0b0d14;
+  --on-ink: #ffffff;
+  --outside: light-dark(#eceef2, #15161a);
+  --sans: "Geist", system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, monospace;
+}
+
+.field.gone, .field .gone {
+  --bg: var(--outside);
+  --fg: light-dark(var(--ink), #f1f2f6);
+  --muted: color-mix(in srgb, var(--fg) 65%, var(--bg));
+}
