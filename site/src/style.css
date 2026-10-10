@@ -64,6 +64,10 @@ pre {
   font-family: var(--mono);
 }
 
+p code {
+  white-space: nowrap;
+}
+
 mark {
   border-radius: 0.2em;
   background: var(--hl);
@@ -191,7 +195,7 @@ h1 mark {
   display: inline-block;
   padding: 0 0.07em;
   border-radius: 0.06em;
-  line-height: 0.86;
+  line-height: 0.76;
 }
 
 .sub {
@@ -228,8 +232,10 @@ h1 mark {
 
 .command code {
   min-width: 0;
+  overflow: hidden;
   font-size: 0.8rem;
-  overflow-wrap: anywhere;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .prompt {
@@ -705,11 +711,11 @@ h3 {
 
 .ledger tbody td {
   color: var(--muted);
-  font: 500 0.8rem var(--mono);
+  font: 500 0.8rem/1.6 var(--mono);
 }
 
 .ledger mark {
-  padding: 0.1rem 0.35rem;
+  padding: 0 0.35rem;
 }
 
 .spec {
@@ -753,10 +759,16 @@ h3 {
 
 .window pre {
   padding: 1.25rem;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+  white-space: normal;
   font-size: 0.82rem;
   line-height: 1.75;
+}
+
+.window .ln {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: pre;
 }
 
 .window mark {
@@ -812,6 +824,7 @@ h3 {
 
 .setup {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
 }
 

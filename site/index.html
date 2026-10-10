@@ -149,13 +149,13 @@
           <p class="line"><code>enclave run</code> puts it in a command and prints <code>[hidden PASSWORD]</code> wherever it would show up. A 2FA setup key gives fresh 6-digit codes.</p>
           <div class="window">
             <div class="title"><span>~/projects/movie-night</span><span>bash</span></div>
-            <pre><code><span class="prompt">$</span> enclave ask Netflix email password
-https://moonlit-lynx-37.convex.site/eF1WskT4lLi5yz9YbLGSAg<mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=…</mark>
-<span class="dim">Send this link to the person, then run `enclave wait Netflix` in the background.</span>
-<span class="prompt">$</span> enclave wait Netflix
-saved Netflix: email, password
-<span class="prompt">$</span> enclave run PASSWORD=Netflix/password sh -c 'echo "signing in with $PASSWORD"'
-signing in with [hidden PASSWORD]</code></pre>
+            <pre><code><span class="ln"><span class="prompt">$</span> enclave ask Netflix email password</span>
+<span class="ln">https://moonlit-lynx-37.convex.site/eF1W…GSAg<mark>#from=hex&amp;name=Netflix&amp;field=email&amp;field=password&amp;key=…</mark></span>
+<span class="ln"><span class="dim">Send this link to the person, then run `enclave wait Netflix` in the background.</span></span>
+<span class="ln"><span class="prompt">$</span> enclave wait Netflix</span>
+<span class="ln">saved Netflix: email, password</span>
+<span class="ln"><span class="prompt">$</span> enclave run PASSWORD=Netflix/password sh -c 'echo "signing in with $PASSWORD"'</span>
+<span class="ln">signing in with [hidden PASSWORD]</span></code></pre>
           </div>
         </div>
       </section>
@@ -199,20 +199,20 @@ signing in with [hidden PASSWORD]</code></pre>
           </div>
           <div class="window theme-file">
             <div class="title"><span>page/themes/field.css</span><span>css</span></div>
-            <pre><code><span class="dim">:root {</span>
-  --accent: <i style="--swatch: #2b3ff0"></i>#2b3ff0;
-  --on-accent: <i style="--swatch: #fff"></i>#fff;
-  --accent-deep: color-mix(in srgb, var(--accent) 75%, #000);
-  --on-accent-deep: <i style="--swatch: #fff"></i>#fff;
-  --bg: var(--accent);
-  --fg: var(--on-accent);
-  --outside: <i style="--swatch: #eceef2"></i>#eceef2;
-  --ink: <i style="--swatch: #0b0d14"></i>#0b0d14;
-  --input: <i style="--swatch: #fff"></i>#fff;
-  --input-text: <i style="--swatch: #10131a"></i>#10131a;
-  --mono: "Geist Mono", ui-monospace, monospace;
-  font: 18px/1.5 Geist, system-ui, sans-serif;
-<span class="dim">}</span></code></pre>
+            <pre><code><span class="ln"><span class="dim">:root {</span></span>
+<span class="ln">  --accent: <i style="--swatch: #2b3ff0"></i>#2b3ff0;</span>
+<span class="ln">  --on-accent: <i style="--swatch: #fff"></i>#fff;</span>
+<span class="ln">  --accent-deep: color-mix(in srgb, var(--accent) 75%, #000);</span>
+<span class="ln">  --on-accent-deep: <i style="--swatch: #fff"></i>#fff;</span>
+<span class="ln">  --bg: var(--accent);</span>
+<span class="ln">  --fg: var(--on-accent);</span>
+<span class="ln">  --outside: <i style="--swatch: #eceef2"></i>#eceef2;</span>
+<span class="ln">  --ink: <i style="--swatch: #0b0d14"></i>#0b0d14;</span>
+<span class="ln">  --input: <i style="--swatch: #fff"></i>#fff;</span>
+<span class="ln">  --input-text: <i style="--swatch: #10131a"></i>#10131a;</span>
+<span class="ln">  --mono: "Geist Mono", ui-monospace, monospace;</span>
+<span class="ln">  font: 18px/1.5 Geist, system-ui, sans-serif;</span>
+<span class="ln"><span class="dim">}</span></span></code></pre>
           </div>
         </div>
       </section>
