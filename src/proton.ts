@@ -23,19 +23,24 @@ const renamed: Record<string, string> = { totp_uri: "totp" }
 const run = promisify(execFile)
 
 export async function* readProton(vaultName: string, passCli = process.env.ENCLAVE_PASS_CLI ?? "pass-cli") {
-  const pass = async (...args: string[]): Promise<any> => {
+  const pass = async (args: string[], attempts = 6): Promise<any> => {
     for (let attempt = 1; ; attempt++) {
       try {
-        return JSON.parse((await run(passCli, args, { maxBuffer: 64 << 20 })).stdout)
+        return JSON.parse((await run(passCli, args, { maxBuffer: 256 << 20 })).stdout)
       } catch (error) {
-        if (attempt === 6) throw error
+        if (attempt >= attempts) throw error
         await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000))
       }
     }
   }
-  const { items } = await pass("item", "list", `--vault-name=${vaultName}`, "--filter-state", "active", "--output", "json")
+  const list = (flags: string[] = [], attempts?: number) =>
+    pass(["item", "list", `--vault-name=${vaultName}`, "--filter-state=active", "--output=json", ...flags], attempts)
+  const full = await list(["--show-secrets"], 1).catch(() => undefined)
+  if (full) return yield* full.items.map((item: { content: ProtonItem }) => item.content)
+
+  const { items } = await list()
   for (const { id, share_id } of items as { id: string; share_id: string }[])
-    yield (await pass("item", "view", `--share-id=${share_id}`, `--item-id=${id}`, "--output", "json")).item.content as ProtonItem
+    yield (await pass(["item", "view", `--share-id=${share_id}`, `--item-id=${id}`, "--output=json"])).item.content as ProtonItem
 }
 
 export function* toItems(proton: Iterable<ProtonItem>, items = new Map<string, Item>()) {

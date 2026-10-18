@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "enclave",
+  "description": "Signs in with passkeys from your agent's enclave vault, without the key ever entering the browser.",
+  "version": "0.1.0",
+  "permissions": ["nativeMessaging"],
+  "background": { "service_worker": "worker.js" },
+  "content_scripts": [
+    { "matches": ["https://*/*", "http://localhost/*"], "js": ["page.js"], "world": "MAIN", "run_at": "document_start", "all_frames": true },
+    { "matches": ["https://*/*", "http://localhost/*"], "js": ["bridge.js"], "run_at": "document_start", "all_frames": true }
+  ]
+}

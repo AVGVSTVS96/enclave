@@ -229,12 +229,19 @@ To type a password into a login form, pipe it straight into whatever does the ty
 A field named `passkey` holds a passkey, and the agent signs in with it in Chrome without ever seeing its key:
 
 ```sh
-enclave passkey GitHub    # with github.com's sign-in page open
+enclave passkey GitHub    # then click the site's passkey sign-in
 ```
 
-enclave finds the tab on the passkey's site and loads the passkey into Chrome's own built-in authenticator for that tab, through Chrome's remote debugging ([WebAuthn](https://chromedevtools.github.io/devtools-protocol/tot/WebAuthn/)). The agent clicks the site's passkey sign-in, Chrome signs, and enclave removes the passkey the moment it's used, or after 5 minutes. Run it in the background, since it waits for that sign-in.
+`enclave passkey` arms the passkey for one sign-in, for up to 5 minutes. When the site asks for a passkey, enclave's Chrome extension hands the request to `enclave sign`, which signs it inside the vault and disarms the passkey. The private key never enters Chrome. Run it in the background, since it waits for that sign-in.
 
-Chrome has to be running with `--remote-debugging-port=9222` and its own `--user-data-dir`, since Chrome 136 turned remote debugging off for the default profile. `--cdp <url>` points at another address. While it waits, the key sits in that Chrome's memory, so anything that can reach its remote debugging port could use it until the sign-in.
+enclave signs the way Proton Pass does, with a signature counter of 0 every time. Sites read 0 as "this authenticator doesn't count", so a passkey keeps working from Proton and from enclave side by side.
+
+Install the extension once per machine. It's force-installed through Chrome's policy, so it loads in every profile:
+
+```sh
+extension/install                                  # signs with enclave on this machine
+extension/install ssh my-server enclave sign       # or with a vault on another machine
+```
 
 ## Bring your Proton Pass vault
 
@@ -244,7 +251,7 @@ enclave import proton <vault>
 
 copies every item in a [Proton Pass](https://proton.me/pass) vault in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title. Proton keeps everything. Run it again to bring in what changed; it replaces items with the same name.
 
-2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does. `ENCLAVE_PASS_CLI` names a different pass-cli,, like one signed in as a Proton Pass agent.
+2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does. `ENCLAVE_PASS_CLI` names a different pass-cli, like one signed in as a Proton Pass agent.
 
 ## CLI
 
@@ -258,7 +265,8 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `enclave wait <name>` | Waits for the answer and saves it. Exits 1 if the link expires first. |
 | `enclave run VAR=<name>/<field>… <command…>` | Runs a command with secrets in its environment, hidden in its output. |
 | `enclave get <name> <field>` | Prints a saved value, for a pipe or `$(…)`. |
-| `enclave passkey <name> [field]` | Signs in with a saved passkey in the Chrome tab on its site. `--cdp <url>` points at Chrome. |
+| `enclave passkey <name> [field]` | Arms a saved passkey for the next sign-in on its site, through the extension. |
+| `enclave sign` | Signs a passkey request (JSON on stdin) with an armed passkey. The extension runs it. |
 | `enclave import proton <vault>` | Copies a Proton Pass vault in through pass-cli. |
 | `enclave list` | Saved names and their fields, never values. |
 | `enclave rm <name>` | Deletes a saved item. |
@@ -273,7 +281,7 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `request_secret` | Makes the link. If the client supports [URL elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation), it offers to open the link for the person right there; otherwise it gives the agent the link to send. |
 | `wait_for_secret` | Returns the moment the person taps Send, with the field names it saved. |
 | `run_with_secrets` | Runs a command with secrets in its environment and hides them in the output. |
-| `sign_in_with_passkey` | Loads a saved passkey into the Chrome tab on its site, then returns so the agent can click sign in. |
+| `sign_in_with_passkey` | Arms a saved passkey for the next sign-in on its site, then returns so the agent can click sign in. |
 | `list_secrets` | Names and fields, never values. |
 
 There's no tool that returns a secret's value.
@@ -351,7 +359,8 @@ npm run build    # bundles the CLI, SDK and types into dist/
 | `src/hpke.ts` | The encryption, shared by the page and the agent |
 | `src/vault.ts` | `ask`, `wait`, `get`, `run` and the rest of the SDK |
 | `src/mcp.ts` | The MCP server |
-| `src/passkey.ts` | Signing in with a passkey through Chrome's remote debugging |
+| `src/passkey.ts` | Signing a passkey sign-in |
+| `extension/` | The Chrome extension that sends passkey requests to `enclave sign` |
 | `src/proton.ts` | Reading a Proton Pass vault, passkeys included |
 | `skills/enclave/` | The Agent Skill |
 

@@ -1,12 +1,13 @@
 import { ConvexClient, ConvexHttpClient } from "convex/browser"
 import { makeFunctionReference } from "convex/server"
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { watch } from "node:fs"
+import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { openAnswer } from "./answer.ts"
 import { decode, encode } from "./base64url.ts"
 import { generateKeyPair } from "./hpke.ts"
-import { signInWithPasskey, type PasskeyOptions } from "./passkey.ts"
+import { accepts, signAssertion, type SignRequest } from "./passkey.ts"
 import { readProton, toItems } from "./proton.ts"
 import { runWithSecrets, type Stdio } from "./run.ts"
 import { Store, type Item } from "./store.ts"
@@ -115,8 +116,38 @@ export function openVault({
     return items
   }
 
-  async function passkey(name: string, field = "passkey", options?: PasskeyOptions) {
-    await signInWithPasskey(JSON.parse(await get(name, field)), options)
+  const armed = join(home, "armed")
+
+  async function passkey(name: string, field = "passkey", timeout = 300_000) {
+    await get(name, field)
+    await mkdir(armed, { recursive: true, mode: 0o700 })
+    const path = join(armed, `${encodeURIComponent(name)}.json`)
+    await writeFile(path, JSON.stringify({ name, field, until: Date.now() + timeout }), { mode: 0o600 })
+    const signedIn = new Promise<void>((resolve, reject) => {
+      const watcher = watch(armed, () => readFile(path).catch(() => done()))
+      const timer = setTimeout(() => done(new Error(`nobody signed in with ${name}'s passkey in time`)), timeout)
+      const done = (error?: Error) => {
+        watcher.close()
+        clearTimeout(timer)
+        if (error) rm(path, { force: true }).then(() => reject(error))
+        else resolve()
+      }
+    })
+    signedIn.catch(() => undefined)
+    return { signedIn }
+  }
+
+  async function sign(request: SignRequest) {
+    for (const file of await readdir(armed).catch(() => [])) {
+      const path = join(armed, file)
+      const { name, field, until } = JSON.parse(await readFile(path, "utf8").catch(() => "{}"))
+      if (!name || until < Date.now()) continue
+      const key = JSON.parse(await get(name, field))
+      if (!accepts(key, request)) continue
+      await rm(path, { force: true })
+      return signAssertion(key, request)
+    }
+    throw new Error(`no passkey is ready for ${request.rpId ?? new URL(request.origin).hostname}`)
   }
 
   async function remove(name: string) {
@@ -134,7 +165,7 @@ export function openVault({
     return runWithSecrets(command, Object.fromEntries(values), stdio)
   }
 
-  return { ask, wait, get, list, remove, run, importProton, passkey }
+  return { ask, wait, get, list, remove, run, importProton, passkey, sign }
 }
 
 export type Vault = ReturnType<typeof openVault>

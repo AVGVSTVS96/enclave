@@ -86,17 +86,16 @@ export async function serve(vault: Vault) {
     {
       title: "Sign in with a passkey",
       description:
-        "Load a saved passkey into the Chrome tab that's on the passkey's site, so you can sign in with it there. It returns once the passkey is ready: then click the site's passkey sign-in. The passkey signs once and is removed from Chrome, or after 5 minutes. Chrome must be running with remote debugging.",
+        "Let the browser sign in once with a saved passkey, in the next 5 minutes. Call it, then click the site's passkey sign-in: enclave's browser extension asks the vault to sign, and the passkey's key never leaves the vault.",
       inputSchema: {
         name: z.string().describe("The saved item with the passkey"),
         field: z.string().optional().describe('The field holding it. Defaults to "passkey".'),
-        cdp: z.string().optional().describe("Chrome's remote debugging address. Defaults to http://127.0.0.1:9222."),
       },
       annotations: { openWorldHint: true },
     },
-    async ({ name, field, cdp }) => {
-      const tab = await new Promise<string>((ready, reject) => vault.passkey(name, field, { cdp, ready }).catch(reject))
-      return reply(`${name}'s passkey is ready in "${tab}". Click the site's passkey sign-in now.`)
+    async ({ name, field }) => {
+      await vault.passkey(name, field)
+      return reply(`${name}'s passkey is ready for 5 minutes. Click the site's passkey sign-in now.`)
     },
   )
 
