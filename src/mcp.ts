@@ -6,7 +6,7 @@ import * as z from "zod"
 import packageJson from "../package.json" with { type: "json" }
 import type { Vault } from "./vault.ts"
 
-const instructions = `Never ask the person for a password, API key or other secret in chat. Ask with request_secret, wait with wait_for_secret, and use what's saved with run_with_secrets. You never see secret values, and you should never try to read or print one.`
+const instructions = `Never ask the person for a password, API key or other secret in chat. Ask with request_secret, wait with wait_for_secret, use what's saved with run_with_secrets, and sign in with a saved passkey with sign_in_with_passkey. You never see secret values, and you should never try to read or print one.`
 
 const reply = (text: string) => ({ content: [{ type: "text" as const, text }] })
 
@@ -78,6 +78,25 @@ export async function serve(vault: Vault) {
       const collect = new PassThrough().on("data", (chunk) => output.push(String(chunk)))
       const code = await vault.run(command, secrets, { stdin: "ignore", stdout: collect, stderr: collect })
       return reply([output.join("").trimEnd(), `[exit code ${code}]`].filter(Boolean).join("\n"))
+    },
+  )
+
+  server.registerTool(
+    "sign_in_with_passkey",
+    {
+      title: "Sign in with a passkey",
+      description:
+        "Load a saved passkey into the Chrome tab that's on the passkey's site, so you can sign in with it there. It returns once the passkey is ready: then click the site's passkey sign-in. The passkey signs once and is removed from Chrome, or after 5 minutes. Chrome must be running with remote debugging.",
+      inputSchema: {
+        name: z.string().describe("The saved item with the passkey"),
+        field: z.string().optional().describe('The field holding it. Defaults to "passkey".'),
+        cdp: z.string().optional().describe("Chrome's remote debugging address. Defaults to http://127.0.0.1:9222."),
+      },
+      annotations: { openWorldHint: true },
+    },
+    async ({ name, field, cdp }) => {
+      const tab = await new Promise<string>((ready, reject) => vault.passkey(name, field, { cdp, ready }).catch(reject))
+      return reply(`${name}'s passkey is ready in "${tab}". Click the site's passkey sign-in now.`)
     },
   )
 

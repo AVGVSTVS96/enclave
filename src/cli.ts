@@ -7,11 +7,14 @@ const usage = `enclave: ask a person for a secret through a one-time link, witho
   enclave wait <name>                    wait for the answer and save it to the vault
   enclave run VAR=<name>/<field>... cmd  run cmd with secrets in its environment, hidden in its output
   enclave get <name> <field>             print a saved value, only ever into a pipe or $(...)
+  enclave passkey <name> [field]         sign in with a saved passkey in Chrome (--cdp <url>, default http://127.0.0.1:9222)
+  enclave import proton <vault>          copy a Proton Pass vault in, through pass-cli
   enclave list                           saved names and their fields
   enclave rm <name>                      delete a saved item
   enclave mcp                            serve all of this to an agent over MCP (stdio)
 
-A field named totp holds a 2FA setup key, and get gives its current code.
+A field named totp holds a 2FA setup key, and get gives its current code. A field named passkey
+holds a passkey, which only ever goes into Chrome.
 ENCLAVE_FROM names who's asking on the page, ENCLAVE_HOME holds the vault (~/.enclave),
 and ENCLAVE_RELAY points at a self-hosted relay.`
 
@@ -31,6 +34,18 @@ try {
     process.exitCode = await vault.run(args.slice(split), secrets)
   } else if (command === "get" && name && rest[0]) {
     process.stdout.write(await vault.get(name, rest[0]))
+  } else if (command === "passkey" && name) {
+    const cdp = rest.indexOf("--cdp")
+    const [field] = rest.filter((_, index) => index !== cdp && index !== cdp + 1)
+    await vault.passkey(name, field, {
+      cdp: cdp < 0 ? undefined : rest[cdp + 1],
+      ready: (tab) => console.log(`${name}'s passkey is ready in "${tab}": sign in with a passkey there`),
+    })
+    console.log(`signed in with ${name}'s passkey`)
+  } else if (command === "import" && name === "proton" && rest[0]) {
+    const items = [...(await vault.importProton(rest[0])).values()]
+    const count = (field: string) => items.filter((item) => Object.keys(item).some((key) => key.split(" ")[0] === field)).length
+    console.log(`imported ${items.length} items: ${count("password")} with a password, ${count("totp")} with 2FA, ${count("passkey")} with a passkey`)
   } else if (command === "list") {
     for (const item of await vault.list()) console.log(`${item.name}: ${item.fields.join(", ")}`)
   } else if (command === "rm" && name) {

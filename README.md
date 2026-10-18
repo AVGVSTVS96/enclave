@@ -224,6 +224,28 @@ enclave run KEY="OpenAI API key/key" sh -c 'curl -s https://api.openai.com/v1/mo
 
 To type a password into a login form, pipe it straight into whatever does the typing: `enclave get Netflix password | <typer>`. A field named `totp` holds a 2FA setup key, and `enclave get GitHub totp` gives its current 6-digit code.
 
+## Passkeys
+
+A field named `passkey` holds a passkey, and the agent signs in with it in Chrome without ever seeing its key:
+
+```sh
+enclave passkey GitHub    # with github.com's sign-in page open
+```
+
+enclave finds the tab on the passkey's site and loads the passkey into Chrome's own built-in authenticator for that tab, through Chrome's remote debugging ([WebAuthn](https://chromedevtools.github.io/devtools-protocol/tot/WebAuthn/)). The agent clicks the site's passkey sign-in, Chrome signs, and enclave removes the passkey the moment it's used, or after 5 minutes. Run it in the background, since it waits for that sign-in.
+
+Chrome has to be running with `--remote-debugging-port=9222` and its own `--user-data-dir`, since Chrome 136 turned remote debugging off for the default profile. `--cdp <url>` points at another address. While it waits, the key sits in that Chrome's memory, so anything that can reach its remote debugging port could use it until the sign-in.
+
+## Bring your Proton Pass vault
+
+```sh
+enclave import proton <vault>
+```
+
+copies every item in a [Proton Pass](https://proton.me/pass) vault in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title. Proton keeps everything. Run it again to bring in what changed; it replaces items with the same name.
+
+2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does. `ENCLAVE_PASS_CLI` names a different pass-cli,, like one signed in as a Proton Pass agent.
+
 ## CLI
 
 ```sh
@@ -236,6 +258,8 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `enclave wait <name>` | Waits for the answer and saves it. Exits 1 if the link expires first. |
 | `enclave run VAR=<name>/<field>… <command…>` | Runs a command with secrets in its environment, hidden in its output. |
 | `enclave get <name> <field>` | Prints a saved value, for a pipe or `$(…)`. |
+| `enclave passkey <name> [field]` | Signs in with a saved passkey in the Chrome tab on its site. `--cdp <url>` points at Chrome. |
+| `enclave import proton <vault>` | Copies a Proton Pass vault in through pass-cli. |
 | `enclave list` | Saved names and their fields, never values. |
 | `enclave rm <name>` | Deletes a saved item. |
 | `enclave mcp` | Serves the tools below over MCP (stdio). |
@@ -249,6 +273,7 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `request_secret` | Makes the link. If the client supports [URL elicitation](https://modelcontextprotocol.io/specification/2025-11-25/client/elicitation), it offers to open the link for the person right there; otherwise it gives the agent the link to send. |
 | `wait_for_secret` | Returns the moment the person taps Send, with the field names it saved. |
 | `run_with_secrets` | Runs a command with secrets in its environment and hides them in the output. |
+| `sign_in_with_passkey` | Loads a saved passkey into the Chrome tab on its site, then returns so the agent can click sign in. |
 | `list_secrets` | Names and fields, never values. |
 
 There's no tool that returns a secret's value.
@@ -326,6 +351,8 @@ npm run build    # bundles the CLI, SDK and types into dist/
 | `src/hpke.ts` | The encryption, shared by the page and the agent |
 | `src/vault.ts` | `ask`, `wait`, `get`, `run` and the rest of the SDK |
 | `src/mcp.ts` | The MCP server |
+| `src/passkey.ts` | Signing in with a passkey through Chrome's remote debugging |
+| `src/proton.ts` | Reading a Proton Pass vault, passkeys included |
 | `skills/enclave/` | The Agent Skill |
 
 ## License

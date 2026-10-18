@@ -6,8 +6,10 @@ import { join } from "node:path"
 import { openAnswer } from "./answer.ts"
 import { decode, encode } from "./base64url.ts"
 import { generateKeyPair } from "./hpke.ts"
+import { signInWithPasskey, type PasskeyOptions } from "./passkey.ts"
+import { readProton, toItems } from "./proton.ts"
 import { runWithSecrets, type Stdio } from "./run.ts"
-import { Store } from "./store.ts"
+import { Store, type Item } from "./store.ts"
 import { totp } from "./totp.ts"
 
 export interface VaultOptions {
@@ -107,6 +109,16 @@ export function openVault({
     return Promise.all(names.map(async (name) => ({ name, fields: Object.keys((await store.get(name)) ?? {}) })))
   }
 
+  async function importProton(vaultName: string) {
+    const items = new Map<string, Item>()
+    for await (const entry of readProton(vaultName)) for (const [name, item] of toItems([entry], items)) await store.put(name, item)
+    return items
+  }
+
+  async function passkey(name: string, field = "passkey", options?: PasskeyOptions) {
+    await signInWithPasskey(JSON.parse(await get(name, field)), options)
+  }
+
   async function remove(name: string) {
     await store.remove(name)
   }
@@ -122,7 +134,7 @@ export function openVault({
     return runWithSecrets(command, Object.fromEntries(values), stdio)
   }
 
-  return { ask, wait, get, list, remove, run }
+  return { ask, wait, get, list, remove, run, importProton, passkey }
 }
 
 export type Vault = ReturnType<typeof openVault>

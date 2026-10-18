@@ -28,7 +28,9 @@ Never ask for a secret in chat, and never print one. Run `enclave` (or `npx -y e
 
    To type a value into a login form, pipe it straight into the program that types: `enclave get Netflix password | <typer>`. `enclave get GitHub totp` gives the current 2FA code.
 
-`enclave list` shows what's saved: names and fields, never values.
+4. **Passkeys.** With the site's sign-in page open in Chrome, run `enclave passkey <name>` in the background, then click the site's passkey sign-in. Chrome signs with the saved passkey, and enclave removes it the moment it's used.
+
+`enclave list` shows what's saved: names and fields, never values. `enclave import proton <vault>` copies a Proton Pass vault in, 2FA and passkeys included.
 
 ## Rules
 
