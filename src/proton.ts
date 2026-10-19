@@ -66,7 +66,7 @@ export function toItem({ content, note, extra_fields = [] }: ProtonItem): Item {
   }
 
   for (const fields of Object.values(content)) {
-    if (typeof fields !== "object") continue
+    if (!fields || typeof fields !== "object") continue
     for (const [field, value] of Object.entries(fields)) {
       if (field === "passkeys") for (const passkey of value as { content: number[] }[]) add("passkey", JSON.stringify(readPasskey(passkey.content)))
       else if (Array.isArray(value)) add(field, value.filter((line) => typeof line === "string").join("\n"))
