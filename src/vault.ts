@@ -77,13 +77,13 @@ export function openVault({
     return { url: `${url}#${fragment}`, wait: () => waitFor(name, pending) }
   }
 
-  async function wait(name: string) {
+  async function wait(name: string, signal?: AbortSignal) {
     const pending = await readPending(name)
     if (!pending) throw new Error(`nothing asked for ${name}`)
-    return waitFor(name, pending)
+    return waitFor(name, pending, signal)
   }
 
-  async function waitFor(name: string, pending: Pending) {
+  async function waitFor(name: string, pending: Pending, signal?: AbortSignal) {
     const client = new ConvexClient(pending.relay, { logger: false })
     const forget = async () => {
       const current = await readPending(name)
@@ -91,7 +91,9 @@ export function openVault({
       return current && current.token !== pending.token
     }
     try {
-      const sealed = await new Promise<ArrayBuffer | null>((resolve, reject) =>
+      const sealed = await new Promise<ArrayBuffer | null>((resolve, reject) => {
+        signal?.throwIfAborted()
+        signal?.addEventListener("abort", () => reject(signal.reason))
         client.onUpdate(
           requests.watch,
           { token: pending.token },
@@ -100,8 +102,8 @@ export function openVault({
             else if (request.answer) resolve(request.answer)
           },
           reject,
-        ),
-      )
+        )
+      })
       if (!sealed) throw new Error((await forget()) ? `a newer link for ${name} replaced this one` : `the link for ${name} expired`)
       const answer = await openAnswer(decode(pending.privateKey), name, new Uint8Array(sealed))
       if (!pending.fields.every((field) => typeof answer[field] === "string")) throw new Error(`the answer for ${name} is incomplete`)

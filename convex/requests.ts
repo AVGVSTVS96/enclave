@@ -1,10 +1,10 @@
-import { MINUTE, RateLimiter } from "@convex-dev/rate-limiter"
+import { HOUR, MINUTE, RateLimiter } from "@convex-dev/rate-limiter"
 import { v } from "convex/values"
 import { encode } from "../src/base64url.ts"
 import { components, internal } from "./_generated/api"
 import { internalMutation, internalQuery, mutation, query, type QueryCtx } from "./_generated/server"
 
-const lifetime = 30 * MINUTE
+const lifetime = 24 * HOUR
 
 const rateLimiter = new RateLimiter(components.rateLimiter, {
   open: { kind: "token bucket", rate: 60, period: MINUTE },

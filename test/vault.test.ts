@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { generateKeyPairSync } from "node:crypto"
-import { mkdtemp, readdir, rm } from "node:fs/promises"
+import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { type TestContext, test } from "node:test"
@@ -58,4 +58,12 @@ test("asking needs at least one field, each with its own name", async (t) => {
   await assert.rejects(vault.ask("x", []))
   await assert.rejects(vault.ask("x", ["password", "password"]))
   await assert.rejects(vault.ask("x", [""]))
+})
+
+test("a wait that gives up keeps the link, so the next wait can still collect the answer", async (t) => {
+  const { home, vault } = await vaultWith(t, {})
+  await mkdir(join(home, "pending"), { recursive: true })
+  await writeFile(join(home, "pending", "Netflix.json"), JSON.stringify({ relay: "http://127.0.0.1:9", token: "t", privateKey: "k", fields: ["password"] }))
+  await assert.rejects(vault.wait("Netflix", AbortSignal.timeout(100)), { name: "TimeoutError" })
+  assert.deepEqual(await readdir(join(home, "pending")), ["Netflix.json"])
 })

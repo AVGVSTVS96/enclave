@@ -40,7 +40,7 @@ export async function serve(vault: Vault) {
           return reply(`The person has a private link for ${name}. Call wait_for_secret with name "${name}".`)
         }
       }
-      return reply(`Send the person this link exactly as it is: ${url}\nIt works once, for 30 minutes. Then call wait_for_secret with name "${name}".`)
+      return reply(`Send the person this link exactly as it is: ${url}\nIt works once, for 24 hours. Then call wait_for_secret with name "${name}".`)
     },
   )
 
@@ -49,11 +49,16 @@ export async function serve(vault: Vault) {
     {
       title: "Wait for a secret",
       description:
-        "Wait until the person sends the secret from request_secret, then save it to the vault. It returns the moment they tap Send, or fails when the link expires after 30 minutes.",
+        "Wait until the person sends the secret from request_secret, then save it to the vault. It returns the moment they tap Send. After 25 minutes it returns so you can call it again, and the link stays open for 24 hours.",
       inputSchema: { name: z.string().describe("The name given to request_secret") },
     },
-    async ({ name }) => {
-      const fields = await vault.wait(name)
+    async ({ name }, { signal }) => {
+      const patience = AbortSignal.timeout(25 * 60_000)
+      const fields = await vault.wait(name, AbortSignal.any([signal, patience])).catch((error) => {
+        if (patience.aborted) return undefined
+        throw error
+      })
+      if (!fields) return reply(`${name} isn't filled in yet. The link stays open; call wait_for_secret again to keep waiting.`)
       const elicitationId = elicitations.get(name)
       if (elicitationId) await server.server.createElicitationCompletionNotifier(elicitationId)()
       elicitations.delete(name)

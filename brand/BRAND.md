@@ -7,7 +7,7 @@ Two themes ship in the page, and anyone can write a third. **ledger** is the hou
 ## Personality
 
 - **For everyone.** "Grandma-level" simple. One question, one button, words like *locked* and *link*.
-- **Exact.** Real numbers in their real shape: 304 bytes, 30 minutes, the real link. Trust comes from showing what the relay sees, never from a padlock.
+- **Exact.** Real numbers in their real shape: 304 bytes, 24 hours, the real link. Trust comes from showing what the relay sees, never from a padlock.
 - **Developer polish, not developer costume.** "A high security like developer but also like really polished vibe." Mono only where there is real data.
 - **Calm.** Each screen says one thing. The rest stays out of the way.
 

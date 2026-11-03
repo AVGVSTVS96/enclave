@@ -63,7 +63,7 @@ claude mcp add enclave -- npx -y enclave-link mcp
 codex mcp add enclave -- npx -y enclave-link mcp
 ```
 
-Codex stops a tool after 60 seconds by default. To let `wait_for_secret` wait as long as the link lives, add this under `[mcp_servers.enclave]` in `~/.codex/config.toml`:
+Codex stops a tool after 60 seconds by default. `wait_for_secret` waits up to 25 minutes a call (the agent calls it again if the person needs longer), so add this under `[mcp_servers.enclave]` in `~/.codex/config.toml`:
 
 ```toml
 tool_timeout_sec = 1800
@@ -211,7 +211,7 @@ deletes the request ────────▶  gone
 ```
 
 - **The relay can't read anything.** The key it would need never leaves the agent's computer. The public key travels in the part of the link after `#`, which browsers don't send to servers, so the relay doesn't even learn what was asked for.
-- **Links work once and expire.** The first answer wins, and the request is deleted as soon as the agent picks it up, or after 30 minutes.
+- **Links work once and expire.** The first answer wins, and the request is deleted as soon as the agent picks it up, or after 24 hours.
 - **No polling.** `enclave wait` holds a live Convex subscription and wakes up the moment the answer lands.
 
 ## Using a secret without seeing it
@@ -236,7 +236,9 @@ enclave passkey GitHub    # then click the site's passkey sign-in
 
 enclave signs the way Proton Pass does, with a signature counter of 0 every time. Sites read 0 as "this authenticator doesn't count", so a passkey keeps working from Proton and from enclave side by side.
 
-Install the extension once per machine. It's force-installed through Chrome's policy, so it loads in every profile:
+A passkey's private key never comes out: `enclave get` and `enclave run` refuse passkey fields, and only `enclave sign` uses them.
+
+Install the extension once per machine, from a clone of this repo, with Google Chrome on Linux. It's force-installed through Chrome's policy, so it loads in every profile:
 
 ```sh
 extension/install                                  # signs with enclave on this machine
@@ -246,10 +248,11 @@ extension/install ssh my-server enclave sign       # or with a vault on another 
 ## Bring your Proton Pass vault
 
 ```sh
-enclave import proton <vault>
+enclave import proton            # every vault
+enclave import proton Work       # or just the ones you name
 ```
 
-copies every item in a [Proton Pass](https://proton.me/pass) vault in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title. Proton keeps everything. Run it again to bring in what changed; it replaces items with the same name.
+copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title (two items with the same title get the account or a number after it). Proton keeps everything. Run it again to bring in what changed; it replaces items with the same name.
 
 2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does. `ENCLAVE_PASS_CLI` names a different pass-cli, like one signed in as a Proton Pass agent.
 
@@ -267,8 +270,8 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `enclave get <name> <field>` | Prints a saved value, for a pipe or `$(…)`. |
 | `enclave passkey <name> [field]` | Arms a saved passkey for the next sign-in on its site, through the extension. |
 | `enclave sign` | Signs a passkey request (JSON on stdin) with an armed passkey. The extension runs it. |
-| `enclave import proton <vault>` | Copies a Proton Pass vault in through pass-cli. |
-| `enclave list` | Saved names and their fields, never values. |
+| `enclave import proton [vault…]` | Copies Proton Pass in through pass-cli: every vault, or the ones named. |
+| `enclave list [search]` | Saved names and their fields, never values. A search matches names and websites. |
 | `enclave rm <name>` | Deletes a saved item. |
 | `enclave mcp` | Serves the tools below over MCP (stdio). |
 
@@ -282,7 +285,7 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `wait_for_secret` | Returns the moment the person taps Send, with the field names it saved. |
 | `run_with_secrets` | Runs a command with secrets in its environment and hides them in the output. |
 | `sign_in_with_passkey` | Arms a saved passkey for the next sign-in on its site, then returns so the agent can click sign in. |
-| `list_secrets` | Names and fields, never values. |
+| `list_secrets` | Names and fields, never values, optionally only those matching a name or website. |
 
 There's no tool that returns a secret's value.
 
