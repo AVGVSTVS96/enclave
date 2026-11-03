@@ -160,24 +160,6 @@
         </div>
       </section>
 
-      <section class="row" id="sign-in">
-        <div class="frame block">
-          <a class="anchor" href="#sign-in">#sign-in</a>
-          <h2>2FA codes and passkeys, too.</h2>
-          <p class="line">Bring in your Proton Pass vault, 2FA and passkeys included. A 2FA field gives the current code, and a passkey signs in through enclave’s Chrome extension, so its key never enters the browser.</p>
-          <div class="window">
-            <div class="title"><span>~</span><span>bash</span></div>
-            <pre><code><span class="ln"><span class="prompt">$</span> enclave import proton</span>
-<span class="ln">imported 214 items: 198 with a password, 12 with 2FA, 9 with a passkey</span>
-<span class="ln"><span class="prompt">$</span> enclave list github</span>
-<span class="ln">github.com: username, password, totp, passkey</span>
-<span class="ln"><span class="prompt">$</span> enclave get github.com totp | <span class="dim">&lt;typer&gt;</span></span>
-<span class="ln"><span class="prompt">$</span> enclave passkey github.com</span>
-<span class="ln">github.com's passkey is ready for one sign-in in the next 5 minutes</span></code></pre>
-          </div>
-        </div>
-      </section>
-
       <section class="row" id="setup">
         <div class="frame block split">
           <div>

@@ -26,8 +26,6 @@ hex   saved Netflix: email, password
 
 It works out of the box with a hosted relay. No accounts, no keys to set up, nothing for the person to install.
 
-The vault also takes 2FA codes and passkeys. Bring in your whole [Proton Pass](#bring-your-proton-pass-vault) vault, and the agent types the current 2FA code or [signs in with a passkey](#passkeys) whose key never leaves the vault.
-
 ## Set up your agent
 
 **Agents with a shell** (Claude Code, Codex, Cursor, Gemini CLI, OpenCode and [30 more](https://github.com/vercel-labs/skills)) get it as a skill:
