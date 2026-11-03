@@ -115,26 +115,47 @@ test("an item imported before field lists keeps the fields hex added on its next
   assert.equal((await store.get("GitHub"))?.token, "ghp_saved")
 })
 
-test("an import keeps a value saved over Proton's until the item changes in Proton", async (t) => {
-  const { vault, store, set } = await proton(t)
+test("an import keeps a value saved over Proton's until Proton changes that field", async (t) => {
+  const { vault, store, set, home } = await proton(t)
 
-  const github = (password: string, modify_time: string) => [
-    {
-      id: "1",
-      share_id: "s",
-      modify_time,
-      content: { title: "GitHub", content: { Login: { email: "me@a.com", password } } },
-    },
+  const github = (password: string, note = "") => [
+    { id: "1", share_id: "s", content: { title: "GitHub", note, content: { Login: { email: "me@a.com", password } } } },
   ]
 
-  await set({ Vault: github("old", "2026-11-01T10:00:00") })
+  await set({ Vault: github("old") })
   await vault.importProton()
   await vault.save("GitHub", "password", "changed by hex")
 
   await vault.importProton()
   assert.equal((await store.get("GitHub"))?.password, "changed by hex")
 
-  await set({ Vault: github("changed in Proton", "2026-11-03T10:00:00") })
+  await set({ Vault: github("old", "edited the note in Proton") })
+  await vault.importProton()
+  assert.deepEqual(await store.get("GitHub"), {
+    email: "me@a.com",
+    password: "changed by hex",
+    note: "edited the note in Proton",
+  })
+
+  await set({ Vault: github("changed in Proton", "edited the note in Proton") })
   await vault.importProton()
   assert.equal((await store.get("GitHub"))?.password, "changed in Proton")
+
+  await set({ Vault: [] })
+  await vault.importProton()
+  assert.deepEqual(await new Store(home, "proton").names(), [])
+})
+
+test("a login moved to another Proton vault survives importing one vault at a time", async (t) => {
+  const { vault, store, set } = await proton(t)
+  await set({ Vault: [login("1", "GitHub", "me@a.com")], Work: [] })
+  await vault.importProton()
+
+  await set({ Vault: [], Work: [login("2", "GitHub", "me@a.com", "moved")] })
+  await vault.importProton(["Work"])
+  await vault.importProton(["Vault"])
+  assert.deepEqual(
+    (await Promise.all((await store.names()).map((name) => store.get(name)))).map((item) => item?.password),
+    ["moved"],
+  )
 })

@@ -179,6 +179,7 @@ export function openVault({
     const manifest = join(home, "proton.json")
     const saved = await readFile(manifest, "utf8").catch(() => undefined)
     const before: Record<string, ProtonImport> = saved ? JSON.parse(saved) : {}
+    const lastSeen = new Store(home, "proton")
     const read = vaults.length ? vaults : await protonVaults()
     const entries = (await Promise.all(read.map(readProton))).flat()
 
@@ -187,6 +188,8 @@ export function openVault({
     const taken = new Map<string, Item | true>(
       saved ? (await store.names()).filter((name) => !protonNames.has(name)).map((name) => [name, true]) : [],
     )
+
+    for (const { name, vault } of Object.values(before)) if (!read.includes(vault)) taken.set(name, true)
 
     const after: typeof before = {}
     const fresh: ProtonEntry[] = []
@@ -215,6 +218,7 @@ export function openVault({
       after[byContent.get(content)!.id] = { name, vault: byContent.get(content)!.vault }
 
     const imported = new Map<string, Item>()
+    const sent = new Map<string, [string, Item]>()
 
     for (const entry of entries) {
       const target = after[entry.id]
@@ -225,19 +229,30 @@ export function openVault({
       const existing = (await store.get(previous?.name ?? target.name)) ?? {}
       const proton = new Set(previous ? previous.fields : saved ? Object.keys(existing) : [])
       const added = Object.entries(existing).filter(([field]) => !proton.has(field) && !(field in item))
-      const untouched = previous?.changed !== undefined && previous.changed === entry.changed
-      imported.set(target.name, untouched ? { ...item, ...existing } : { ...Object.fromEntries(added), ...item })
+      const seen = (await lastSeen.get(entry.id)) ?? {}
+
+      const changedHere = Object.entries(existing).filter(
+        ([field, value]) => field in seen && value !== seen[field] && item[field] === seen[field],
+      )
+
+      imported.set(target.name, { ...Object.fromEntries(added), ...item, ...Object.fromEntries(changedHere) })
       target.fields = Object.keys(item)
-      target.changed = entry.changed
+      sent.set(target.name, [entry.id, item])
     }
 
-    for (const [name, item] of imported) await store.put(name, item)
+    for (const [name, item] of imported) {
+      await store.put(name, item)
+      await lastSeen.put(...sent.get(name)!)
+    }
 
     const removed = Object.values(before)
       .filter(({ name, vault }) => read.includes(vault) && !imported.has(name))
       .map(({ name }) => name)
 
     for (const name of removed) await store.remove(name)
+
+    for (const [id, { vault }] of Object.entries(before))
+      if (read.includes(vault) && !after[id]) await lastSeen.remove(id)
     const kept = Object.fromEntries(Object.entries(before).filter(([, { vault }]) => !read.includes(vault)))
     const temporary = `${manifest}.${randomUUID()}`
     await writeFile(temporary, JSON.stringify({ ...kept, ...after }), { mode: 0o600 })
@@ -331,7 +346,6 @@ interface ProtonImport {
   name: string
   vault: string
   fields?: string[]
-  changed?: string
 }
 
 export const vault = openVault()

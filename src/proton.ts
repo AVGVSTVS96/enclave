@@ -23,12 +23,7 @@ const protonItem = z.object({
 })
 
 const vaultList = z.object({ vaults: z.array(z.object({ name: z.string() })) })
-
-const itemList = z.object({
-  items: z.array(
-    z.object({ id: z.string(), share_id: z.string(), modify_time: z.string().nullish(), content: protonItem }),
-  ),
-})
+const itemList = z.object({ items: z.array(z.object({ id: z.string(), share_id: z.string(), content: protonItem })) })
 
 const sealedPasskey = z.object({ v: z.number(), c: bytes })
 
@@ -56,7 +51,6 @@ export interface Passkey {
 export interface ProtonEntry {
   id: string
   vault: string
-  changed?: string
   content: ProtonItem
 }
 
@@ -84,12 +78,7 @@ export async function readProton(vault: string): Promise<ProtonEntry[]> {
     await pass(["item", "list", `--vault-name=${vault}`, "--filter-state=active", "--output=json", "--show-secrets"]),
   )
 
-  return items.map((item) => ({
-    id: `${item.share_id}/${item.id}`,
-    vault,
-    changed: item.modify_time ?? undefined,
-    content: item.content,
-  }))
+  return items.map((item) => ({ id: `${item.share_id}/${item.id}`, vault, content: item.content }))
 }
 
 export function* toItems<Entry extends ProtonItem>(proton: Iterable<Entry>, items = new Map<string, Item | true>()) {

@@ -12,10 +12,12 @@ const extension = ".enclave"
 
 export class Store {
   readonly dir: string
+  private readonly folder: string
   private keys?: Promise<{ publicKey: Uint8Array<ArrayBuffer>; privateKey: Uint8Array<ArrayBuffer> }>
 
-  constructor(dir: string) {
+  constructor(dir: string, folder = "items") {
     this.dir = dir
+    this.folder = folder
   }
 
   async get(name: string): Promise<Item | undefined> {
@@ -39,7 +41,7 @@ export class Store {
   }
 
   async names() {
-    const files = (await readdir(join(this.dir, "items")).catch(missing)) ?? []
+    const files = (await readdir(join(this.dir, this.folder)).catch(missing)) ?? []
 
     return files
       .filter((file) => file.endsWith(extension))
@@ -47,7 +49,7 @@ export class Store {
   }
 
   private path(name: string) {
-    return join(this.dir, "items", encodeURIComponent(name) + extension)
+    return join(this.dir, this.folder, encodeURIComponent(name) + extension)
   }
 
   private key() {
@@ -85,8 +87,8 @@ export class Store {
   }
 
   private async temporary(data: string | Uint8Array) {
-    const path = join(this.dir, "items", `${randomUUID()}.tmp`)
-    await mkdir(join(this.dir, "items"), { recursive: true, mode: 0o700 })
+    const path = join(this.dir, this.folder, `${randomUUID()}.tmp`)
+    await mkdir(join(this.dir, this.folder), { recursive: true, mode: 0o700 })
     await writeFile(path, data, { mode: 0o600 })
 
     return path
