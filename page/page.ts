@@ -35,18 +35,26 @@ function ask(name: string, fields: string[], publicKey: Uint8Array<ArrayBuffer>)
     event.preventDefault()
     send.disabled = true
     error.hidden = true
+
     try {
       const answer = JSON.stringify(Object.fromEntries(fields.map((field, index) => [field, inputs[index]!.value])))
+
       if (sealed?.answer !== answer) sealed = { answer, body: await sealAnswer(publicKey, name, JSON.parse(answer)) }
       const { body } = sealed
       const response = await fetch(location.pathname, { method: "POST", body }).catch(() => undefined)
+
       if (response?.ok) {
         for (const bytes of document.querySelectorAll(".bytes")) bytes.textContent = String(body.length)
         form.reset()
         sealed = undefined
         root.dataset.state = "sent"
       } else if (response?.status === 410) root.dataset.state = "gone"
-      else showError(response?.status === 413 ? "That’s too long to send here." : "That didn’t go through. Check your internet and try again.")
+      else
+        showError(
+          response?.status === 413
+            ? "That’s too long to send here."
+            : "That didn’t go through. Check your internet and try again.",
+        )
     } catch {
       showError("Something went wrong on this page. Reload it and try again.")
     } finally {
@@ -62,7 +70,7 @@ function ask(name: string, fields: string[], publicKey: Uint8Array<ArrayBuffer>)
 
 function addField(field: string, index: number) {
   const template = document.querySelector<HTMLTemplateElement>("#field")!
-  const row = template.content.cloneNode(true) as DocumentFragment
+  const row = document.importNode(template.content, true)
   const label = row.querySelector("label")!
   const input = row.querySelector("input")!
   const reveal = row.querySelector("button")!
@@ -71,7 +79,8 @@ function addField(field: string, index: number) {
   label.htmlFor = input.id = `field-${index}`
 
   if (/^e-?mail$/i.test(field)) Object.assign(input, { type: "email", autocomplete: "username" })
-  else if (/^(user(name)?|login|account)$/i.test(field)) Object.assign(input, { type: "text", autocomplete: "username" })
+  else if (/^(user(name)?|login|account)$/i.test(field))
+    Object.assign(input, { type: "text", autocomplete: "username" })
   else {
     Object.assign(input, { type: "password", autocomplete: /password/i.test(field) ? "current-password" : "off" })
     reveal.hidden = false
@@ -83,19 +92,25 @@ function addField(field: string, index: number) {
   }
 
   document.querySelector("#fields")!.append(row)
+
   return input
 }
 
 function labelFor(field: string) {
   if (field === "totp") return "2FA setup key"
   const words = field.split(/[\s_-]+/).filter(Boolean)
-  const text = words.map((word) => (/^(ssn|pin|cvv|cvc|api|id|url|iban|ein)$/i.test(word) ? word.toUpperCase() : word)).join(" ")
+
+  const text = words
+    .map((word) => (/^(ssn|pin|cvv|cvc|api|id|url|iban|ein)$/i.test(word) ? word.toUpperCase() : word))
+    .join(" ")
+
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 function parseKey(key: string | null) {
   try {
     const bytes = decode(key ?? "")
+
     return bytes.length === 32 ? bytes : undefined
   } catch {
     return undefined
@@ -105,6 +120,7 @@ function parseKey(key: string | null) {
 async function supported() {
   try {
     await crypto.subtle.generateKey({ name: "X25519" }, false, ["deriveBits"])
+
     return true
   } catch {
     return false

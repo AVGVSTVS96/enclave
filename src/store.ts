@@ -20,8 +20,10 @@ export class Store {
 
   async get(name: string): Promise<Item | undefined> {
     const sealed = await readFile(this.path(name)).catch(missing)
+
     if (!sealed) return undefined
     const { privateKey } = await this.key()
+
     return JSON.parse(new TextDecoder().decode(await open(privateKey, info, text.encode(name), new Uint8Array(sealed))))
   }
 
@@ -38,7 +40,10 @@ export class Store {
 
   async names() {
     const files = (await readdir(join(this.dir, "items")).catch(missing)) ?? []
-    return files.filter((file) => file.endsWith(extension)).map((file) => decodeURIComponent(file.slice(0, -extension.length)))
+
+    return files
+      .filter((file) => file.endsWith(extension))
+      .map((file) => decodeURIComponent(file.slice(0, -extension.length)))
   }
 
   private path(name: string) {
@@ -50,23 +55,32 @@ export class Store {
       this.keys = undefined
       throw error
     })
+
     return this.keys
   }
 
   private async load(): Promise<{ publicKey: Uint8Array<ArrayBuffer>; privateKey: Uint8Array<ArrayBuffer> }> {
     const path = join(this.dir, "key.json")
     const saved = await readFile(path, "utf8").catch(missing)
+
     if (saved) {
       const { publicKey, privateKey } = JSON.parse(saved)
+
       return { publicKey: decode(publicKey), privateKey: decode(privateKey) }
     }
+
     const { publicKey, privateKey } = await generateKeyPair()
-    const temporary = await this.temporary(JSON.stringify({ publicKey: encode(publicKey), privateKey: encode(privateKey) }))
+
+    const temporary = await this.temporary(
+      JSON.stringify({ publicKey: encode(publicKey), privateKey: encode(privateKey) }),
+    )
+
     await link(temporary, path)
       .catch((error) => {
         if (error.code !== "EEXIST") throw error
       })
       .finally(() => rm(temporary))
+
     return this.load()
   }
 
@@ -74,6 +88,7 @@ export class Store {
     const path = join(this.dir, "items", `${randomUUID()}.tmp`)
     await mkdir(join(this.dir, "items"), { recursive: true, mode: 0o700 })
     await writeFile(path, data, { mode: 0o600 })
+
     return path
   }
 }

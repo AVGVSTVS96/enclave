@@ -30,19 +30,32 @@ console.log(JSON.stringify(args[0] === "vault" ? { vaults: Object.keys(vaults).m
   process.env.ENCLAVE_PASS_CLI = cli
   t.after(() => delete process.env.ENCLAVE_PASS_CLI)
   const home = join(dir, "vault")
-  return { vault: openVault({ home }), store: new Store(home), set: (vaults: object) => writeFile(data, JSON.stringify(vaults)) }
+
+  return {
+    vault: openVault({ home }),
+    store: new Store(home),
+    set: (vaults: Record<string, ReturnType<typeof login>[]>) => writeFile(data, JSON.stringify(vaults)),
+  }
 }
 
 test("a re-import keeps every name on the same account, follows renames and drops what Proton deleted", async (t) => {
   const { vault, store, set } = await proton(t)
-  await set({ Vault: [login("1", "Google", "me@a.com"), login("2", "Netflix", "me@a.com")], Work: [login("3", "Google", "me@work.com")] })
+  await set({
+    Vault: [login("1", "Google", "me@a.com"), login("2", "Netflix", "me@a.com")],
+    Work: [login("3", "Google", "me@work.com")],
+  })
   await vault.importProton()
   assert.deepEqual((await store.names()).sort(), ["Google", "Google (me@work.com)", "Netflix"])
 
   await store.put("Twitter", { password: "typed by link" })
   await set({
     Work: [login("3", "Google", "me@work.com")],
-    Vault: [login("4", "Google", "new@a.com"), login("1", "Google", "me@a.com"), login("2", "Netflix (old)", "me@a.com"), login("5", "Twitter", "me@a.com")],
+    Vault: [
+      login("4", "Google", "new@a.com"),
+      login("1", "Google", "me@a.com"),
+      login("2", "Netflix (old)", "me@a.com"),
+      login("5", "Twitter", "me@a.com"),
+    ],
   })
   const { removed } = await vault.importProton()
   assert.equal((await store.get("Google"))?.email, "me@a.com")
@@ -54,7 +67,11 @@ test("a re-import keeps every name on the same account, follows renames and drop
   assert.ok((await store.names()).includes("Netflix (old)"))
 
   await set({ Vault: [login("1", "Google", "me@a.com")], Work: [] })
-  assert.deepEqual((await vault.importProton(["Vault"])).removed.sort(), ["Google (new@a.com)", "Netflix (old)", "Twitter (me@a.com)"])
+  assert.deepEqual((await vault.importProton(["Vault"])).removed.sort(), [
+    "Google (new@a.com)",
+    "Netflix (old)",
+    "Twitter (me@a.com)",
+  ])
   assert.ok((await store.names()).includes("Google (me@work.com)"))
   assert.ok((await store.names()).includes("Twitter"))
 })

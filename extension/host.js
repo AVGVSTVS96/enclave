@@ -3,9 +3,11 @@ import { readFileSync } from "node:fs"
 
 const command = JSON.parse(readFileSync(new URL("host.json", import.meta.url), "utf8")).command
 const chunks = []
+
 process.stdin.on("data", (chunk) => {
   chunks.push(chunk)
   const input = Buffer.concat(chunks)
+
   if (input.length < 4 || input.length < 4 + input.readUInt32LE(0)) return
   process.stdin.pause()
   answer(input.subarray(4, 4 + input.readUInt32LE(0)))

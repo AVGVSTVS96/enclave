@@ -13,16 +13,20 @@ const terminal: Stdio = { stdin: "inherit", stdout: process.stdout, stderr: proc
 
 export async function runWithSecrets(command: string[], secrets: Record<string, string>, stdio = terminal) {
   const [program, ...args] = command
+
   if (!program) throw new Error("nothing to run")
   const child = spawn(program, args, { env: { ...process.env, ...secrets }, stdio: [stdio.stdin, "pipe", "pipe"] })
+
   const exited = new Promise<number>((resolve, reject) => {
     child.on("error", reject)
     child.on("close", (code) => resolve(code ?? 1))
   })
+
   await Promise.all([
     pipeline(child.stdout, redact(secrets), stdio.stdout, { end: false }),
     pipeline(child.stderr, redact(secrets), stdio.stderr, { end: false }),
   ])
+
   return exited
 }
 
@@ -30,8 +34,12 @@ export function redact(secrets: Record<string, string>) {
   const hidden = Object.entries(secrets)
     .filter(([, value]) => value)
     .sort(([, a], [, b]) => b.length - a.length)
+
   const held = Math.max(0, ...hidden.map(([, value]) => value.length - 1))
-  const hide = (text: string) => hidden.reduce((text, [name, value]) => text.replaceAll(value, `[hidden ${name}]`), text)
+
+  const hide = (text: string) =>
+    hidden.reduce((text, [name, value]) => text.replaceAll(value, `[hidden ${name}]`), text)
+
   const decoder = new StringDecoder("utf8")
   let tail = ""
 

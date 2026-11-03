@@ -12,20 +12,28 @@ const passkey = JSON.stringify({
   credentialId: Buffer.from("credential").toString("base64"),
   userHandle: Buffer.from("user").toString("base64"),
   userName: "octocat",
-  privateKey: generateKeyPairSync("ec", { namedCurve: "P-256" }).privateKey.export({ type: "pkcs8", format: "der" }).toString("base64"),
+  privateKey: generateKeyPairSync("ec", { namedCurve: "P-256" })
+    .privateKey.export({ type: "pkcs8", format: "der" })
+    .toString("base64"),
 })
+
 const request = { origin: "https://github.com", challenge: "Y2hhbGxlbmdl" }
 
 async function vaultWith(t: TestContext, items: Record<string, Record<string, string>>) {
   const home = await mkdtemp(join(tmpdir(), "enclave-"))
   t.after(() => rm(home, { recursive: true, force: true }))
   const store = new Store(home)
+
   for (const [name, item] of Object.entries(items)) await store.put(name, item)
+
   return { home, vault: openVault({ home }) }
 }
 
 test("a passkey's key stays in the vault, and every 2FA field gives a code", async (t) => {
-  const { vault } = await vaultWith(t, { GitHub: { passkey, "passkey 2": passkey, totp: "JBSWY3DPEHPK3PXP", "totp 2": "JBSWY3DPEHPK3PXP" } })
+  const { vault } = await vaultWith(t, {
+    GitHub: { passkey, "passkey 2": passkey, totp: "JBSWY3DPEHPK3PXP", "totp 2": "JBSWY3DPEHPK3PXP" },
+  })
+
   await assert.rejects(vault.get("GitHub", "passkey"), /stays in the vault/)
   await assert.rejects(vault.get("GitHub", "passkey 2"), /stays in the vault/)
   await assert.rejects(vault.run(["true"], { KEY: "GitHub/passkey" }), /stays in the vault/)
@@ -38,9 +46,16 @@ test("list finds items by name or by website", async (t) => {
     "Work login": { email: "a@b.c", password: "x", urls: "https://accounts.example.com/login\nhttps://example.org" },
     Netflix: { password: "x" },
   })
+
   assert.deepEqual((await vault.list()).map((item) => item.name).sort(), ["Netflix", "Work login", "github.com"])
-  assert.deepEqual((await vault.list("GITHUB")).map((item) => item.name), ["github.com"])
-  assert.deepEqual((await vault.list("example.org")).map((item) => item), [{ name: "Work login", fields: ["email", "password", "urls"] }])
+  assert.deepEqual(
+    (await vault.list("GITHUB")).map((item) => item.name),
+    ["github.com"],
+  )
+  assert.deepEqual(
+    (await vault.list("example.org")).map((item) => item),
+    [{ name: "Work login", fields: ["email", "password", "urls"] }],
+  )
   assert.deepEqual(await vault.list("nothing-like-this"), [])
 })
 
@@ -63,13 +78,19 @@ test("asking needs at least one field, each with its own name", async (t) => {
 test("a wait that gives up keeps the link, so the next wait can still collect the answer", async (t) => {
   const { home, vault } = await vaultWith(t, {})
   await mkdir(join(home, "pending"), { recursive: true })
-  await writeFile(join(home, "pending", "Netflix.json"), JSON.stringify({ relay: "http://127.0.0.1:9", token: "t", privateKey: "k", fields: ["password"] }))
+  await writeFile(
+    join(home, "pending", "Netflix.json"),
+    JSON.stringify({ relay: "http://127.0.0.1:9", token: "t", privateKey: "k", fields: ["password"] }),
+  )
   await assert.rejects(vault.wait("Netflix", AbortSignal.timeout(100)), { name: "TimeoutError" })
   assert.deepEqual(await readdir(join(home, "pending")), ["Netflix.json"])
 })
 
 test("a vault can keep its items in any store, like memory for a one-time answer", async () => {
-  const items = new Map<string, Record<string, string>>([["Netflix", { password: "hunter2", totp: "JBSWY3DPEHPK3PXP" }]])
+  const items = new Map<string, Record<string, string>>([
+    ["Netflix", { password: "hunter2", totp: "JBSWY3DPEHPK3PXP" }],
+  ])
+
   const vault = openVault({
     home: join(tmpdir(), "enclave-unused"),
     store: {
@@ -79,6 +100,7 @@ test("a vault can keep its items in any store, like memory for a one-time answer
       names: async () => [...items.keys()],
     },
   })
+
   assert.equal(await vault.get("Netflix", "password"), "hunter2")
   assert.match(await vault.get("Netflix", "totp"), /^\d{6}$/)
   await vault.remove("Netflix")

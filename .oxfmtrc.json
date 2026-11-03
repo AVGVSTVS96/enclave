@@ -1,0 +1,16 @@
+{
+  "semi": false,
+  "printWidth": 120,
+  "ignorePatterns": [
+    "convex/_generated/**",
+    "convex/page.gen.ts",
+    "dist/**",
+    "site/**",
+    "brand/**",
+    "tools/oxlint/anti-slop/**",
+    "package-lock.json",
+    "**/*.md",
+    "**/*.html",
+    "**/*.css"
+  ]
+}

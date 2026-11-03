@@ -21,26 +21,36 @@ export async function serve(vault: Vault) {
       description:
         "Use this whenever you need a password, API key, 2FA key or any other secret from the person, instead of asking for it in chat. It gives you a one-time link: they open it, type the secret, and it's encrypted in their browser so only this vault can open it, without it ever passing through the conversation. Then call wait_for_secret.",
       inputSchema: {
-        name: z.string().describe('What the secret is for. The person sees it as the title, like "Netflix" or "OpenAI API key"'),
+        name: z
+          .string()
+          .describe('What the secret is for. The person sees it as the title, like "Netflix" or "OpenAI API key"'),
         fields: z
           .array(z.string())
           .optional()
-          .describe('What to ask for, like ["email", "password"]. Defaults to ["password"]. A field named "totp" asks for a 2FA setup key.'),
+          .describe(
+            'What to ask for, like ["email", "password"]. Defaults to ["password"]. A field named "totp" asks for a 2FA setup key.',
+          ),
       },
       annotations: { openWorldHint: true },
     },
     async ({ name, fields }) => {
       const { url } = await vault.ask(name, fields)
+
       if (server.server.getClientCapabilities()?.elicitation?.url) {
         const elicitationId = randomUUID()
         const message = `Open this private link to enter ${name}. It's encrypted on your device and never passes through the chat.`
         const { action } = await server.server.elicitInput({ mode: "url", elicitationId, url, message })
+
         if (action === "accept") {
           elicitations.set(name, elicitationId)
+
           return reply(`The person has a private link for ${name}. Call wait_for_secret with name "${name}".`)
         }
       }
-      return reply(`Send the person this link exactly as it is: ${url}\nIt works once, for 24 hours. Then call wait_for_secret with name "${name}".`)
+
+      return reply(
+        `Send the person this link exactly as it is: ${url}\nIt works once, for 24 hours. Then call wait_for_secret with name "${name}".`,
+      )
     },
   )
 
@@ -54,14 +64,19 @@ export async function serve(vault: Vault) {
     },
     async ({ name }, { signal }) => {
       const patience = AbortSignal.timeout(25 * 60_000)
+
       const fields = await vault.wait(name, AbortSignal.any([signal, patience])).catch((error) => {
         if (patience.aborted) return undefined
         throw error
       })
-      if (!fields) return reply(`${name} isn't filled in yet. The link stays open; call wait_for_secret again to keep waiting.`)
+
+      if (!fields)
+        return reply(`${name} isn't filled in yet. The link stays open; call wait_for_secret again to keep waiting.`)
       const elicitationId = elicitations.get(name)
+
       if (elicitationId) await server.server.createElicitationCompletionNotifier(elicitationId)()
       elicitations.delete(name)
+
       return reply(`Saved ${name}: ${fields.join(", ")}. Use it with run_with_secrets.`)
     },
   )
@@ -73,8 +88,15 @@ export async function serve(vault: Vault) {
       description:
         'Run a program with saved secrets in its environment. Their values are replaced with [hidden VAR] in the output, so you can use a secret without seeing it. Example: {"command": ["sh", "-c", "curl -H \\"Authorization: Bearer $KEY\\" https://api.example.com/me"], "secrets": {"KEY": "Example/api key"}}',
       inputSchema: {
-        command: z.array(z.string()).min(1).describe('The program and its arguments. Use ["sh", "-c", "…"] for shell syntax, and refer to secrets as $VAR inside it.'),
-        secrets: z.record(z.string(), z.string()).describe('Environment variables to set, each from "<name>/<field>", like {"STRIPE_KEY": "Stripe/key"}'),
+        command: z
+          .array(z.string())
+          .min(1)
+          .describe(
+            'The program and its arguments. Use ["sh", "-c", "…"] for shell syntax, and refer to secrets as $VAR inside it.',
+          ),
+        secrets: z
+          .record(z.string(), z.string())
+          .describe('Environment variables to set, each from "<name>/<field>", like {"STRIPE_KEY": "Stripe/key"}'),
       },
       annotations: { destructiveHint: true, openWorldHint: true },
     },
@@ -82,6 +104,7 @@ export async function serve(vault: Vault) {
       const output: string[] = []
       const collect = new PassThrough().on("data", (chunk) => output.push(String(chunk)))
       const code = await vault.run(command, secrets, { stdin: "ignore", stdout: collect, stderr: collect })
+
       return reply([output.join("").trimEnd(), `[exit code ${code}]`].filter(Boolean).join("\n"))
     },
   )
@@ -100,6 +123,7 @@ export async function serve(vault: Vault) {
     },
     async ({ name, field }) => {
       await vault.passkey(name, field)
+
       return reply(`${name}'s passkey is ready for 5 minutes. Click the site's passkey sign-in now.`)
     },
   )
@@ -108,13 +132,21 @@ export async function serve(vault: Vault) {
     "list_secrets",
     {
       title: "List saved secrets",
-      description: "List what's saved in the vault: names and their fields, not their values. Check here before asking the person for something.",
+      description:
+        "List what's saved in the vault: names and their fields, not their values. Check here before asking the person for something.",
       inputSchema: { search: z.string().optional().describe('A name or website to match, like "github"') },
       annotations: { readOnlyHint: true },
     },
     async ({ search }) => {
       const items = await vault.list(search)
-      return reply(items.length ? items.map((item) => `${item.name}: ${item.fields.join(", ")}`).join("\n") : search ? `Nothing saved matches ${search}.` : "The vault is empty.")
+
+      return reply(
+        items.length
+          ? items.map((item) => `${item.name}: ${item.fields.join(", ")}`).join("\n")
+          : search
+            ? `Nothing saved matches ${search}.`
+            : "The vault is empty.",
+      )
     },
   )
 

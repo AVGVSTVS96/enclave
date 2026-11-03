@@ -4,6 +4,7 @@ import { test } from "node:test"
 import { accepts, signAssertion } from "../src/passkey.ts"
 
 const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "P-256" })
+
 const passkey = {
   rpId: "github.com",
   credentialId: Buffer.from("credential").toString("base64"),
@@ -11,6 +12,7 @@ const passkey = {
   userName: "octocat",
   privateKey: privateKey.export({ type: "pkcs8", format: "der" }).toString("base64"),
 }
+
 const request = { origin: "https://github.com", challenge: "Y2hhbGxlbmdl" }
 
 test("signs the way Proton Pass does: count always 0, user verified, synced", () => {
@@ -21,7 +23,12 @@ test("signs the way Proton Pass does: count always 0, user verified, synced", ()
     assert.equal(authenticatorData[32], 0x1d)
     assert.deepEqual(authenticatorData.subarray(0, 32), createHash("sha256").update("github.com").digest())
     const clientData = Buffer.from(assertion.clientDataJSON, "base64url")
-    assert.deepEqual(JSON.parse(String(clientData)), { type: "webauthn.get", challenge: request.challenge, origin: request.origin, crossOrigin: false })
+    assert.deepEqual(JSON.parse(String(clientData)), {
+      type: "webauthn.get",
+      challenge: request.challenge,
+      origin: request.origin,
+      crossOrigin: false,
+    })
     const signed = Buffer.concat([authenticatorData, createHash("sha256").update(clientData).digest()])
     assert.ok(verify("sha256", signed, publicKey, Buffer.from(assertion.signature, "base64url")))
   }

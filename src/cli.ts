@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { text } from "node:stream/consumers"
+import { signRequest } from "./passkey.ts"
 import { vault } from "./vault.ts"
 
 const usage = `enclave: ask a person for a secret through a one-time link, without ever seeing it
@@ -35,24 +37,37 @@ try {
   } else if (command === "run" && name) {
     const args = [name, ...rest]
     const split = args.findIndex((arg) => !/^[A-Za-z_]\w*=/.test(arg))
+
     if (split < 1) throw new Error("usage: enclave run VAR=<name>/<field>... <command...>")
-    const secrets = Object.fromEntries(args.slice(0, split).map((arg) => [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)]))
+
+    const secrets = Object.fromEntries(
+      args.slice(0, split).map((arg) => [arg.slice(0, arg.indexOf("=")), arg.slice(arg.indexOf("=") + 1)]),
+    )
+
     process.exitCode = await vault.run(args.slice(split), secrets)
   } else if (command === "get" && name && rest[0]) {
     process.stdout.write(await vault.get(name, rest[0]))
   } else if (command === "passkey" && name) {
     await vault.passkey(name, rest[0])
-    console.log(`${name}'s passkey is ready for one sign-in in the next 5 minutes: click the site's passkey sign-in now`)
+    console.log(
+      `${name}'s passkey is ready for one sign-in in the next 5 minutes: click the site's passkey sign-in now`,
+    )
   } else if (command === "sign") {
-    const request = JSON.parse(await new Response(process.stdin as unknown as ReadableStream).text())
-    process.stdout.write(JSON.stringify(await vault.sign(request)))
+    process.stdout.write(JSON.stringify(await vault.sign(parseSignRequest(await text(process.stdin)))))
   } else if (command === "import" && name === "proton") {
     const { items, removed } = await vault.importProton(rest)
-    const count = (field: string) => items.filter((item) => item.fields.some((key) => key.split(" ")[0] === field)).length
-    console.log(`imported ${items.length} items: ${count("password")} with a password, ${count("totp")} with 2FA, ${count("passkey")} with a passkey`)
+
+    const count = (field: string) =>
+      items.filter((item) => item.fields.some((key) => key.split(" ")[0] === field)).length
+
+    console.log(
+      `imported ${items.length} items: ${count("password")} with a password, ${count("totp")} with 2FA, ${count("passkey")} with a passkey`,
+    )
+
     if (removed.length) console.log(`removed ${removed.length} deleted from Proton: ${removed.join(", ")}`)
   } else if (command === "list") {
-    for (const item of await vault.list([name, ...rest].join(" ").trim() || undefined)) console.log(`${item.name}: ${item.fields.join(", ")}`)
+    for (const item of await vault.list([name, ...rest].join(" ").trim() || undefined))
+      console.log(`${item.name}: ${item.fields.join(", ")}`)
   } else if (command === "rm" && name) {
     await vault.remove(name)
   } else if (command === "mcp") {
@@ -69,4 +84,12 @@ try {
 
 function quote(text: string) {
   return /^[\w@%+=:,./-]+$/.test(text) ? text : `'${text.replaceAll("'", `'\\''`)}'`
+}
+
+function parseSignRequest(input: string) {
+  const request = signRequest.safeParse(JSON.parse(input))
+
+  if (!request.success) throw new Error("that isn't a passkey request from enclave's extension")
+
+  return request.data
 }

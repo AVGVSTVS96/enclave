@@ -15,6 +15,7 @@ test("opens RFC 9180 test vector A.1", async () => {
         "f938558b5d72f1a23810b4be2ab4f84331acc02fc97babc53a52ae8218a355a96d8770ac83d07bea87e13c512a",
     ),
   )
+
   assert.equal(new TextDecoder().decode(opened), "Beauty is truth, truth beauty")
 })
 

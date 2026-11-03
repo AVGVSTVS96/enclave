@@ -17,6 +17,7 @@ export const open = mutation({
     const slug = await slugOf(token)
     const request = await ctx.db.insert("requests", { slug })
     await ctx.scheduler.runAfter(lifetime, internal.requests.expire, { request })
+
     return `${process.env.CONVEX_SITE_URL}/${slug}`
   },
 })
@@ -25,6 +26,7 @@ export const watch = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const request = await find(ctx, await slugOf(token))
+
     return request && { answer: request.answer ?? null }
   },
 })
@@ -33,6 +35,7 @@ export const close = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
     const request = await find(ctx, await slugOf(token))
+
     if (request) await ctx.db.delete("requests", request._id)
   },
 })
@@ -41,6 +44,7 @@ export const isOpen = internalQuery({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
     const request = await find(ctx, slug)
+
     return request !== null && request.answer === undefined
   },
 })
@@ -49,9 +53,12 @@ export const fill = internalMutation({
   args: { slug: v.string(), answer: v.bytes() },
   handler: async (ctx, { slug, answer }) => {
     const request = await find(ctx, slug)
+
     if (!request) return false
+
     if (request.answer) return same(request.answer, answer)
     await ctx.db.patch("requests", request._id, { answer })
+
     return true
   },
 })
@@ -65,6 +72,7 @@ export const expire = internalMutation({
 
 function same(a: ArrayBuffer, b: ArrayBuffer) {
   const [x, y] = [new Uint8Array(a), new Uint8Array(b)]
+
   return x.length === y.length && x.every((byte, index) => byte === y[index])
 }
 
@@ -77,5 +85,6 @@ function find(ctx: QueryCtx, slug: string) {
 
 async function slugOf(token: string) {
   const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))
+
   return encode(new Uint8Array(hash, 0, 16))
 }

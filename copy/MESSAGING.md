@@ -103,7 +103,7 @@ The brief: "It's for everyone, so it has to be dead simple, grandma-level."
 | 80 lines | The encryption, `src/hpke.ts`² |
 | 133 lines | The whole relay, `convex/`² |
 | under 1,000 lines | Everything: CLI, SDK, MCP, vault, relay and page (943)² |
-| 61 KB | The page, one file, one request, fonts included³ |
+| 62 KB | The page, one file, one request, fonts included³ |
 | 230 kB | The npm package, with no dependencies to install⁴ |
 
 1. 32-byte encapsulated key + the JSON answer padded to 256-byte blocks + a 16-byte tag. Measured with `sealAnswer` on `{"password":"x"}`, a typical email and password, and a 164-character API key: all 304.

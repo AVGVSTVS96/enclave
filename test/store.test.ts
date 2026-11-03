@@ -11,6 +11,7 @@ const item = { username: "grandma", password: "hunter2" }
 async function scratch(t: TestContext) {
   const dir = await mkdtemp(join(tmpdir(), "enclave-"))
   t.after(() => rm(dir, { recursive: true, force: true }))
+
   return dir
 }
 
@@ -38,5 +39,6 @@ test("processes racing on first use agree on one key", async (t) => {
   const dir = await scratch(t)
   await Promise.all(["a", "b", "c", "d"].map((name) => new Store(dir).put(name, item)))
   const store = new Store(dir)
+
   for (const name of ["a", "b", "c", "d"]) assert.deepEqual(await store.get(name), item)
 })

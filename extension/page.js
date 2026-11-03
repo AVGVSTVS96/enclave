@@ -1,8 +1,22 @@
 {
   const credentials = navigator.credentials
   const get = credentials.get.bind(credentials)
-  const encode = (data) => btoa(String.fromCharCode(...new Uint8Array(ArrayBuffer.isView(data) ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) : data))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
-  const decode = (text) => Uint8Array.from(atob(text.replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0)).buffer
+
+  const encode = (data) =>
+    btoa(
+      String.fromCharCode(
+        ...new Uint8Array(
+          ArrayBuffer.isView(data) ? data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) : data,
+        ),
+      ),
+    )
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "")
+
+  const decode = (text) =>
+    Uint8Array.from(atob(text.replace(/-/g, "+").replace(/_/g, "/")), (char) => char.charCodeAt(0)).buffer
+
   const pending = new Map()
 
   addEventListener("message", ({ source, data }) => {
@@ -28,6 +42,7 @@
       },
       AuthenticatorAssertionResponse.prototype,
     )
+
     return Object.setPrototypeOf(
       {
         id,
@@ -51,12 +66,15 @@
 
   credentials.get = async function (options) {
     const publicKey = options?.publicKey
+
     if (!publicKey || options.signal?.aborted) return get(options)
+
     const assertion = await ask({
       rpId: publicKey.rpId,
       challenge: encode(publicKey.challenge),
       allowCredentials: (publicKey.allowCredentials ?? []).map((allowed) => encode(allowed.id)),
     })
+
     return assertion && !options.signal?.aborted ? credential(assertion) : get(options)
   }
 }
