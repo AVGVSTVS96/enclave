@@ -93,3 +93,12 @@ test("a field saved onto an imported item stays through re-imports, and a field 
   await vault.importProton()
   assert.equal((await store.get("GitHub"))?.token, "ghp_saved")
 })
+
+test("a first import keeps the fields of a login already saved under the same name", async (t) => {
+  const { vault, store, set } = await proton(t)
+  await store.put("GitHub", { token: "ghp_saved" })
+
+  await set({ Vault: [login("1", "GitHub", "me@a.com")] })
+  await vault.importProton()
+  assert.deepEqual(await store.get("GitHub"), { email: "me@a.com", password: "x", token: "ghp_saved" })
+})

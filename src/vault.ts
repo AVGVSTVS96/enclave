@@ -222,8 +222,8 @@ export function openVault({
       if (!target) continue
       const item = toItem(entry.content)
       const previous = before[entry.id]
-      const proton = new Set(previous?.fields)
-      const existing = previous?.fields ? ((await store.get(previous.name)) ?? {}) : {}
+      const existing = (await store.get(previous?.name ?? target.name)) ?? {}
+      const proton = new Set(previous?.fields ?? (saved ? Object.keys(existing) : []))
       const added = Object.entries(existing).filter(([field]) => !proton.has(field) && !(field in item))
       imported.set(target.name, { ...Object.fromEntries(added), ...item })
       target.fields = Object.keys(item)
