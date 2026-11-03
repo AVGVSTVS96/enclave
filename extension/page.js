@@ -51,12 +51,12 @@
 
   credentials.get = async function (options) {
     const publicKey = options?.publicKey
-    if (!publicKey) return get(options)
+    if (!publicKey || options.signal?.aborted) return get(options)
     const assertion = await ask({
       rpId: publicKey.rpId,
       challenge: encode(publicKey.challenge),
       allowCredentials: (publicKey.allowCredentials ?? []).map((allowed) => encode(allowed.id)),
     })
-    return assertion ? credential(assertion) : get(options)
+    return assertion && !options.signal?.aborted ? credential(assertion) : get(options)
   }
 }

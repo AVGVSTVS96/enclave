@@ -15,11 +15,23 @@ function answer(request) {
   const signer = spawn(command[0], command.slice(1), { stdio: ["pipe", "pipe", "ignore"] })
   const output = []
   signer.stdout.on("data", (chunk) => output.push(chunk))
-  signer.on("close", (code) => {
-    const reply = Buffer.from(JSON.stringify(code === 0 ? { assertion: JSON.parse(Buffer.concat(output)) } : { assertion: null }))
-    const length = Buffer.alloc(4)
-    length.writeUInt32LE(reply.length)
-    process.stdout.write(Buffer.concat([length, reply]), () => process.exit(0))
-  })
+  signer.stdin.on("error", () => {})
+  signer.on("error", () => send(null))
+  signer.on("close", (code) => send(code === 0 ? parse(Buffer.concat(output)) : null))
   signer.stdin.end(request)
+}
+
+function parse(bytes) {
+  try {
+    return JSON.parse(bytes)
+  } catch {
+    return null
+  }
+}
+
+function send(assertion) {
+  const reply = Buffer.from(JSON.stringify({ assertion }))
+  const length = Buffer.alloc(4)
+  length.writeUInt32LE(reply.length)
+  process.stdout.write(Buffer.concat([length, reply]), () => process.exit(0))
 }
