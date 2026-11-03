@@ -6,7 +6,7 @@ import * as z from "zod"
 import packageJson from "../package.json" with { type: "json" }
 import type { Vault } from "./vault.ts"
 
-const instructions = `Never ask the person for a password, API key or other secret in chat. Ask with request_secret, wait with wait_for_secret, use what's saved with run_with_secrets, and sign in with a saved passkey with sign_in_with_passkey. You never see secret values, and you should never try to read or print one.`
+const instructions = `When you need a password, API key or other secret from the person, ask for it with request_secret rather than in chat, so it never passes through the conversation. wait_for_secret saves it, run_with_secrets uses it without showing you its value, and sign_in_with_passkey signs in with a saved passkey.`
 
 const reply = (text: string) => ({ content: [{ type: "text" as const, text }] })
 
@@ -103,12 +103,13 @@ export async function serve(vault: Vault) {
     "list_secrets",
     {
       title: "List saved secrets",
-      description: "List what's saved in the vault: names and their fields, never values.",
+      description: "List what's saved in the vault: names and their fields, never values. Check here before asking the person for something.",
+      inputSchema: { search: z.string().optional().describe('Only items whose name or website matches, like "github"') },
       annotations: { readOnlyHint: true },
     },
-    async () => {
-      const items = await vault.list()
-      return reply(items.length ? items.map((item) => `${item.name}: ${item.fields.join(", ")}`).join("\n") : "The vault is empty.")
+    async ({ search }) => {
+      const items = await vault.list(search)
+      return reply(items.length ? items.map((item) => `${item.name}: ${item.fields.join(", ")}`).join("\n") : search ? `Nothing saved matches ${search}.` : "The vault is empty.")
     },
   )
 

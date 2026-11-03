@@ -22,17 +22,23 @@ export interface Passkey {
 const renamed: Record<string, string> = { totp_uri: "totp" }
 const run = promisify(execFile)
 
-export async function* readProton(vaultName: string, passCli = process.env.ENCLAVE_PASS_CLI ?? "pass-cli") {
-  const pass = async (args: string[], attempts = 6): Promise<any> => {
-    for (let attempt = 1; ; attempt++) {
-      try {
-        return JSON.parse((await run(passCli, args, { maxBuffer: 256 << 20 })).stdout)
-      } catch (error) {
-        if (attempt >= attempts) throw error
-        await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000))
-      }
+async function pass(args: string[], attempts = 6): Promise<any> {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return JSON.parse((await run(process.env.ENCLAVE_PASS_CLI ?? "pass-cli", args, { maxBuffer: 256 << 20 })).stdout)
+    } catch (error) {
+      if (attempt >= attempts) throw error
+      await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000))
     }
   }
+}
+
+export async function protonVaults(): Promise<string[]> {
+  const { vaults } = await pass(["vault", "list", "--output=json"])
+  return vaults.map((vault: { name: string }) => vault.name)
+}
+
+export async function* readProton(vaultName: string) {
   const list = (flags: string[] = [], attempts?: number) =>
     pass(["item", "list", `--vault-name=${vaultName}`, "--filter-state=active", "--output=json", ...flags], attempts)
   const full = await list(["--show-secrets"], 1).catch(() => undefined)

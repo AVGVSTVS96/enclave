@@ -1,14 +1,15 @@
 import { ConvexClient, ConvexHttpClient } from "convex/browser"
 import { makeFunctionReference } from "convex/server"
+import { randomUUID } from "node:crypto"
 import { watch } from "node:fs"
-import { mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises"
+import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { openAnswer } from "./answer.ts"
 import { decode, encode } from "./base64url.ts"
 import { generateKeyPair } from "./hpke.ts"
 import { accepts, signAssertion, type SignRequest } from "./passkey.ts"
-import { readProton, toItems } from "./proton.ts"
+import { protonVaults, readProton, toItems } from "./proton.ts"
 import { runWithSecrets, type Stdio } from "./run.ts"
 import { Store, type Item } from "./store.ts"
 import { totp } from "./totp.ts"
@@ -53,14 +54,19 @@ export function openVault({
   }
 
   async function ask(name: string, fields = ["password"]): Promise<Request> {
+    if (!fields.length || fields.some((field) => !field.trim()) || new Set(fields).size < fields.length)
+      throw new Error("ask for at least one field, each with its own name")
     const token = encode(crypto.getRandomValues(new Uint8Array(32)))
     const { publicKey, privateKey } = await generateKeyPair()
     const url = await new ConvexHttpClient(relay, { logger: false }).mutation(requests.open, { token })
 
     const previous = await readPending(name)
     if (previous) await new ConvexHttpClient(previous.relay, { logger: false }).mutation(requests.close, { token: previous.token }).catch(() => undefined)
+    const pending = { relay, token, privateKey: encode(privateKey), fields }
     await mkdir(join(home, "pending"), { recursive: true, mode: 0o700 })
-    await writeFile(pendingPath(name), JSON.stringify({ relay, token, privateKey: encode(privateKey), fields }), { mode: 0o600 })
+    const temporary = `${pendingPath(name)}.${randomUUID()}`
+    await writeFile(temporary, JSON.stringify(pending), { mode: 0o600 })
+    await rename(temporary, pendingPath(name))
 
     const fragment = new URLSearchParams([
       ...(from ? [["from", from]] : []),
@@ -68,64 +74,85 @@ export function openVault({
       ...fields.map((field) => ["field", field]),
       ["key", encode(publicKey)],
     ])
-    return { url: `${url}#${fragment}`, wait: () => wait(name) }
+    return { url: `${url}#${fragment}`, wait: () => waitFor(name, pending) }
   }
 
   async function wait(name: string) {
     const pending = await readPending(name)
     if (!pending) throw new Error(`nothing asked for ${name}`)
+    return waitFor(name, pending)
+  }
+
+  async function waitFor(name: string, pending: Pending) {
     const client = new ConvexClient(pending.relay, { logger: false })
+    const forget = async () => {
+      const current = await readPending(name)
+      if (current?.token === pending.token) await rm(pendingPath(name), { force: true })
+      return current && current.token !== pending.token
+    }
     try {
-      const sealed = await new Promise<ArrayBuffer>((resolve, reject) =>
+      const sealed = await new Promise<ArrayBuffer | null>((resolve, reject) =>
         client.onUpdate(
           requests.watch,
           { token: pending.token },
           (request) => {
-            if (!request) reject(new Error(`the link for ${name} expired`))
+            if (!request) resolve(null)
             else if (request.answer) resolve(request.answer)
           },
           reject,
         ),
       )
+      if (!sealed) throw new Error((await forget()) ? `a newer link for ${name} replaced this one` : `the link for ${name} expired`)
       const answer = await openAnswer(decode(pending.privateKey), name, new Uint8Array(sealed))
       if (!pending.fields.every((field) => typeof answer[field] === "string")) throw new Error(`the answer for ${name} is incomplete`)
       const update = Object.fromEntries(pending.fields.map((field) => [field, answer[field]!]))
       await store.put(name, { ...(await store.get(name)), ...update })
+      await client.mutation(requests.close, { token: pending.token }).catch(() => undefined)
+      await forget()
       return pending.fields
     } finally {
-      await client.mutation(requests.close, { token: pending.token })
       await client.close()
-      await rm(pendingPath(name), { force: true })
     }
   }
 
-  async function get(name: string, field: string) {
+  async function read(name: string, field: string) {
     const value = (await store.get(name))?.[field]
     if (value === undefined) throw new Error(`no ${field} saved for ${name}`)
-    return field === "totp" ? totp(value) : value
+    return value
   }
 
-  async function list() {
-    const names = await store.names()
-    return Promise.all(names.map(async (name) => ({ name, fields: Object.keys((await store.get(name)) ?? {}) })))
+  async function get(name: string, field: string) {
+    const kind = field.match(/^(totp|passkey)( \d+)?$/)?.[1]
+    if (kind === "passkey") throw new Error(`${name}'s ${field} stays in the vault: sign in with it through \`enclave passkey\``)
+    const value = await read(name, field)
+    return kind === "totp" ? totp(value) : value
   }
 
-  async function importProton(vaultName: string) {
+  async function list(search?: string) {
+    const term = search?.toLowerCase()
+    const items = await Promise.all((await store.names()).map(async (name) => ({ name, item: (await store.get(name)) ?? {} })))
+    return items
+      .filter(({ name, item }) => !term || name.toLowerCase().includes(term) || sites(item).some((site) => site.includes(term)))
+      .map(({ name, item }) => ({ name, fields: Object.keys(item) }))
+  }
+
+  async function importProton(vaults: string[] = []) {
     const items = new Map<string, Item>()
-    for await (const entry of readProton(vaultName)) for (const [name, item] of toItems([entry], items)) await store.put(name, item)
+    for (const vaultName of vaults.length ? vaults : await protonVaults())
+      for await (const entry of readProton(vaultName)) for (const [name, item] of toItems([entry], items)) await store.put(name, item)
     return items
   }
 
   const armed = join(home, "armed")
 
   async function passkey(name: string, field = "passkey", timeout = 300_000) {
-    await get(name, field)
+    await read(name, field)
     await mkdir(armed, { recursive: true, mode: 0o700 })
-    const path = join(armed, `${encodeURIComponent(name)}.json`)
+    const path = join(armed, `${randomUUID()}.json`)
     await writeFile(path, JSON.stringify({ name, field, until: Date.now() + timeout }), { mode: 0o600 })
-    const signedIn = new Promise<void>((resolve, reject) => {
+    const used = new Promise<void>((resolve, reject) => {
       const watcher = watch(armed, () => readFile(path).catch(() => done()))
-      const timer = setTimeout(() => done(new Error(`nobody signed in with ${name}'s passkey in time`)), timeout)
+      const timer = setTimeout(() => done(new Error(`no site asked for ${name}'s passkey in time`)), timeout)
       const done = (error?: Error) => {
         watcher.close()
         clearTimeout(timer)
@@ -133,18 +160,27 @@ export function openVault({
         else resolve()
       }
     })
-    signedIn.catch(() => undefined)
-    return { signedIn }
+    used.catch(() => undefined)
+    return { used }
   }
 
   async function sign(request: SignRequest) {
-    for (const file of await readdir(armed).catch(() => [])) {
+    for (const file of (await readdir(armed).catch(() => [])).filter((file) => file.endsWith(".json"))) {
       const path = join(armed, file)
-      const { name, field, until } = JSON.parse(await readFile(path, "utf8").catch(() => "{}"))
-      if (!name || until < Date.now()) continue
-      const key = JSON.parse(await get(name, field))
+      const arm = JSON.parse(await readFile(path, "utf8").catch(() => "{}"))
+      if (!arm.name) continue
+      if (arm.until < Date.now()) {
+        await rm(path, { force: true })
+        continue
+      }
+      const key = JSON.parse(await read(arm.name, arm.field))
       if (!accepts(key, request)) continue
-      await rm(path, { force: true })
+      const claimed = await rename(path, `${path}.used`).then(
+        () => true,
+        () => false,
+      )
+      if (!claimed) continue
+      await rm(`${path}.used`, { force: true })
       return signAssertion(key, request)
     }
     throw new Error(`no passkey is ready for ${request.rpId ?? new URL(request.origin).hostname}`)
@@ -171,3 +207,9 @@ export function openVault({
 export type Vault = ReturnType<typeof openVault>
 
 export const vault = openVault()
+
+function sites(item: Item) {
+  return Object.entries(item)
+    .filter(([field]) => /^(urls?|website|original login uri)( \d+)?$/.test(field))
+    .flatMap(([, value]) => value.toLowerCase().split(/\s+/))
+}
