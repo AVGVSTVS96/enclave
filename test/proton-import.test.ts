@@ -32,6 +32,7 @@ console.log(JSON.stringify(args[0] === "vault" ? { vaults: Object.keys(vaults).m
   const home = join(dir, "vault")
 
   return {
+    home,
     vault: openVault({ home }),
     store: new Store(home),
     set: (vaults: Record<string, object[]>) => writeFile(data, JSON.stringify(vaults)),
@@ -101,4 +102,15 @@ test("a first import keeps the fields of a login already saved under the same na
   await set({ Vault: [login("1", "GitHub", "me@a.com")] })
   await vault.importProton()
   assert.deepEqual(await store.get("GitHub"), { email: "me@a.com", password: "x", token: "ghp_saved" })
+})
+
+test("an item imported before field lists keeps the fields hex added on its next import", async (t) => {
+  const { vault, store, set, home } = await proton(t)
+  await set({ Vault: [login("1", "GitHub", "me@a.com")] })
+  await vault.importProton()
+  await vault.save("GitHub", "token", "ghp_saved")
+  await writeFile(join(home, "proton.json"), JSON.stringify({ "s/1": { name: "GitHub", vault: "Vault" } }))
+
+  await vault.importProton()
+  assert.equal((await store.get("GitHub"))?.token, "ghp_saved")
 })
