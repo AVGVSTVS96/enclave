@@ -2,7 +2,7 @@
 
 **The idea in a sentence:** the part of a link after `#` never leaves your device, so the brand is that part, highlighted.
 
-Two themes ship in the page, and anyone can write a third. **ledger** is the house brand (site, README, icons). **field** is the loud one. Both were approved on the Oct 8 board ("Perfect… build the whole thing").
+Two themes ship in the page, and anyone can write a third. **ledger** is the house brand (site, README, icons). **field** is the loud one.
 
 ## Personality
 

@@ -28,7 +28,7 @@ One headline, one line, one visual each. Let the visual explain.
 | --- | --- | --- | --- |
 | The page | One page, one button. | It says who's asking and for what. Your password manager can fill it. No app, no account. | The real page in ledger and field, side by side |
 | The link | Everything after the # stays on your device. | Browsers never send that part to a server. The key and the question live there, so the relay never learns what was asked. | The link below, with the `#` part highlighted |
-| The ledger | Who can read it, at each step. | You, until you tap Send. The relay holds 304 locked bytes for 30 minutes at most. Only your agent has the key. | The ledger from the ledger theme |
+| The ledger | Who can read it, at each step. | You, until you tap Send. The relay holds 304 locked bytes for 24 hours at most. Only your agent has the key. | The ledger from the ledger theme |
 | Using it | Your agent uses it without seeing it. | `enclave run` puts it in a command and prints `[hidden KEY]` wherever it would show up. A 2FA setup key gives fresh 6-digit codes. | A terminal running `enclave run`, with the hidden output |
 | Setup | One line for most agents. | A skill for any agent with a shell, MCP for the rest, plus a Claude Code plugin and a Gemini CLI extension. | `npx skills add AVGVSTVS96/enclave` and the MCP line |
 | Security | What it can't protect against. | Whoever runs the relay serves the page. A link can claim anyone is asking. An agent set on reading its own vault can. | The CSP header from the live relay, and `hpke.ts` at 80 lines |
@@ -49,7 +49,7 @@ For the security section's body, in this order:
 
 - The lock is HPKE (RFC 9180): X25519, HKDF-SHA256 and AES-128-GCM. 80 lines on the browser's own Web Crypto, no libraries, tested against the RFC's test vectors.
 - Answers are padded, so every login seals to the same 304 bytes. The relay can't tell how long your password is.
-- A link works once. It's deleted when the agent picks up the answer, or after 30 minutes.
+- A link works once. It's deleted when the agent picks up the answer, or after 24 hours.
 - The page is one file with a strict Content Security Policy. It can only talk to the relay it came from.
 - Whoever runs the relay sends you the page, so they could change it. Every site that encrypts in your browser works this way. If you'd rather trust nobody's relay, run your own.
 - Anyone with the link can answer first. They can't read anything, but they could send a fake answer. You'd see "This link doesn't work anymore."
@@ -76,7 +76,7 @@ The field track can only claim what the page knows. The page knows its upload we
 
 ## Voice
 
-Bassim's brief: "It's for everyone, so it has to be dead simple, grandma-level."
+The brief: "It's for everyone, so it has to be dead simple, grandma-level."
 
 - On the page and the hero, say **locked**, not encrypted. The page already does ("It's locked on this device before it's sent"). Save HPKE and X25519 for the security section.
 - Say **relay**, not server or backend. Say **link**, not URL, except in the anatomy.
@@ -91,7 +91,7 @@ Bassim's brief: "It's for everyone, so it has to be dead simple, grandma-level."
 | --- | --- |
 | Military-grade, zero-knowledge secret sharing for AI. | It's locked in your browser. Only your agent can open it. |
 | Seamlessly share credentials with your agent. | Your agent sends a link. You type the password and tap Send. |
-| Your secrets are 100% safe. | The relay holds 304 bytes it can't read, for 30 minutes at most. |
+| Your secrets are 100% safe. | The relay holds 304 bytes it can't read, for 24 hours at most. |
 | Your agent never sees your password. | Your agent uses it without seeing it. An agent that's trying can still read its own vault. |
 
 ## Numbers
@@ -99,7 +99,7 @@ Bassim's brief: "It's for everyone, so it has to be dead simple, grandma-level."
 | Number | What it is |
 | --- | --- |
 | 304 bytes | What the relay holds for any login up to 256 bytes¹ |
-| 30 minutes | Longest a link lives; it's deleted sooner if the agent picks it up |
+| 24 hours | Longest a link lives; it's deleted sooner if the agent picks it up |
 | 80 lines | The encryption, `src/hpke.ts`² |
 | 133 lines | The whole relay, `convex/`² |
 | under 1,000 lines | Everything: CLI, SDK, MCP, vault, relay and page (943)² |
@@ -131,7 +131,7 @@ your agent needs your Netflix password. if it asks in chat, the password sits in
 i made enclave so it sends a one-time link instead. you type it there and only the agent can open it
 
 > the key sits after the # in the link, which browsers never send, so the relay can't even see what was asked
-> every login is locked into the same 304 bytes, gone after 30 min at most
+> every login is locked into the same 304 bytes, gone after 24 hours at most
 > `enclave run` uses it and prints [hidden KEY] where it would show up
 
 one line for claude code, codex, cursor, gemini cli or anything with mcp
@@ -166,7 +166,7 @@ Against the working tree on Oct 8, commit `f2cbe17`.
 | The answer is bound to the request's name | `src/answer.ts:13` (name as AAD) |
 | Locked in the browser before it's sent | `page/page.ts:241-242` |
 | Password managers can fill it | `page/page.ts:262-265` (autocomplete username, current-password) |
-| Links last 30 minutes | `convex/requests.ts:7,19` |
+| Links last 24 hours | `convex/requests.ts` (`lifetime`) |
 | First answer wins | `convex/requests.ts:52` |
 | Deleted when the agent picks it up | `src/vault.ts:93` |
 | The agent wakes on a live subscription, no polling | `src/vault.ts:77` (`onUpdate`) |

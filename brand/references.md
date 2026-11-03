@@ -1,6 +1,6 @@
 # references
 
-The look itself comes from the board Bassim approved on Oct 8 2026 (`.scratch/brand/directions4.html`: "Perfect… build the whole thing"). These two saves are what I studied to turn that board into a system. Both are from his X bookmarks folder "inspiration" (the Mac's `raw/xbook/2026-10-08` sync, read Oct 8 2026).
+The look comes from the design board picked on Oct 8 2026. These two posts are what turned that board into a system.
 
 ## 1. IBM Graphic Design Guide, 1969 to 1987
 
@@ -26,8 +26,7 @@ A reading page where you drag over text and it gets a flat marker block. I stepp
 
 ## Also read
 
-- `~/Developer/commonplace-site/brand`: the shape of this folder (BRAND.md headings, `logo/gen.mjs`, specimen, render flow). Nothing of its look.
-- The product itself: `README.md` and `page/index.html`. The ledger rows, the 304 bytes, the 30 minutes and the `#from=…&key=…` fragment are all real.
+- The product itself: `README.md` and `page/index.html`. The ledger rows, the 304 bytes, the 24 hours and the `#from=…&key=…` fragment are all real.
 
 ## Deliberately not taken
 
