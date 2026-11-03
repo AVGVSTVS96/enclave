@@ -19,7 +19,7 @@ export async function serve(vault: Vault) {
     {
       title: "Ask for a secret",
       description:
-        "Use this whenever you need a password, API key, 2FA key or any other secret from the person, instead of asking for it in chat. It gives you a one-time link: they open it, type the secret, and it's encrypted in their browser for this vault alone, and it stays out of the conversation. Then call wait_for_secret.",
+        "Use this whenever you need a password, API key, 2FA key or other secret from the person, instead of asking in chat. It returns a one-time link; what they type there is locked in their browser for this vault. Then call wait_for_secret.",
       inputSchema: {
         name: z
           .string()
@@ -38,7 +38,7 @@ export async function serve(vault: Vault) {
 
       if (server.server.getClientCapabilities()?.elicitation?.url) {
         const elicitationId = randomUUID()
-        const message = `Open this private link to enter ${name}. It's encrypted on your device and never passes through the chat.`
+        const message = `Open this link to enter ${name}. It's locked on this device before it's sent.`
         const { action } = await server.server.elicitInput({ mode: "url", elicitationId, url, message })
 
         if (action === "accept") {
@@ -86,7 +86,7 @@ export async function serve(vault: Vault) {
     {
       title: "Run a command with secrets",
       description:
-        'Run a program with saved secrets in its environment. Their values are replaced with [hidden VAR] in the output, so you can use a secret without seeing it. Example: {"command": ["sh", "-c", "curl -H \\"Authorization: Bearer $KEY\\" https://api.example.com/me"], "secrets": {"KEY": "Example/api key"}}',
+        'Run a program with saved secrets in its environment. Their values are replaced with [hidden VAR] in the output, so you can use a secret without seeing it. A "totp" field gives its current 2FA code. Example: {"command": ["sh", "-c", "curl -H \\"Authorization: Bearer $KEY\\" https://api.example.com/me"], "secrets": {"KEY": "Example/api key"}}',
       inputSchema: {
         command: z
           .array(z.string())
