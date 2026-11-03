@@ -49,7 +49,8 @@ export const fill = internalMutation({
   args: { slug: v.string(), answer: v.bytes() },
   handler: async (ctx, { slug, answer }) => {
     const request = await find(ctx, slug)
-    if (!request || request.answer) return false
+    if (!request) return false
+    if (request.answer) return same(request.answer, answer)
     await ctx.db.patch("requests", request._id, { answer })
     return true
   },
@@ -61,6 +62,11 @@ export const expire = internalMutation({
     if (await ctx.db.get("requests", request)) await ctx.db.delete("requests", request)
   },
 })
+
+function same(a: ArrayBuffer, b: ArrayBuffer) {
+  const [x, y] = [new Uint8Array(a), new Uint8Array(b)]
+  return x.length === y.length && x.every((byte, index) => byte === y[index])
+}
 
 function find(ctx: QueryCtx, slug: string) {
   return ctx.db

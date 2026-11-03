@@ -29,21 +29,35 @@ function ask(name: string, fields: string[], publicKey: Uint8Array<ArrayBuffer>)
   root.dataset.state = "ask"
   inputs[0]!.focus()
 
+  let sealed: { answer: string; body: Uint8Array<ArrayBuffer> } | undefined
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault()
     send.disabled = true
     error.hidden = true
-    const answer = Object.fromEntries(fields.map((field, index) => [field, inputs[index]!.value]))
-    const body = await sealAnswer(publicKey, name, answer)
-    const response = await fetch(location.pathname, { method: "POST", body }).catch(() => undefined)
-    send.disabled = false
-    if (response?.ok) {
-      for (const bytes of document.querySelectorAll(".bytes")) bytes.textContent = String(body.length)
-      form.reset()
-      root.dataset.state = "sent"
-    } else if (response?.status === 410) root.dataset.state = "gone"
-    else error.hidden = false
+    try {
+      const answer = JSON.stringify(Object.fromEntries(fields.map((field, index) => [field, inputs[index]!.value])))
+      if (sealed?.answer !== answer) sealed = { answer, body: await sealAnswer(publicKey, name, JSON.parse(answer)) }
+      const { body } = sealed
+      const response = await fetch(location.pathname, { method: "POST", body }).catch(() => undefined)
+      if (response?.ok) {
+        for (const bytes of document.querySelectorAll(".bytes")) bytes.textContent = String(body.length)
+        form.reset()
+        sealed = undefined
+        root.dataset.state = "sent"
+      } else if (response?.status === 410) root.dataset.state = "gone"
+      else showError(response?.status === 413 ? "That’s too long to send here." : "That didn’t go through. Check your internet and try again.")
+    } catch {
+      showError("Something went wrong on this page. Reload it and try again.")
+    } finally {
+      send.disabled = false
+    }
   })
+
+  function showError(message: string) {
+    error.textContent = message
+    error.hidden = false
+  }
 }
 
 function addField(field: string, index: number) {
@@ -53,7 +67,7 @@ function addField(field: string, index: number) {
   const input = row.querySelector("input")!
   const reveal = row.querySelector("button")!
 
-  label.textContent = field === "totp" ? "2FA setup key" : field[0]!.toUpperCase() + field.slice(1)
+  label.textContent = labelFor(field)
   label.htmlFor = input.id = `field-${index}`
 
   if (/^e-?mail$/i.test(field)) Object.assign(input, { type: "email", autocomplete: "username" })
@@ -70,6 +84,13 @@ function addField(field: string, index: number) {
 
   document.querySelector("#fields")!.append(row)
   return input
+}
+
+function labelFor(field: string) {
+  if (field === "totp") return "2FA setup key"
+  const words = field.split(/[\s_-]+/).filter(Boolean)
+  const text = words.map((word) => (/^(ssn|pin|cvv|cvc|api|id|url|iban|ein)$/i.test(word) ? word.toUpperCase() : word)).join(" ")
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 function parseKey(key: string | null) {
