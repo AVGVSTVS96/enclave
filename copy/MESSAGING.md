@@ -32,8 +32,8 @@ One headline, one line, one visual each. Let the visual explain.
 | Using it | Your agent uses it without seeing it. | `enclave run` puts it in a command and prints `[hidden KEY]` wherever it would show up. A 2FA setup key gives fresh 6-digit codes. | A terminal running `enclave run`, with the hidden output |
 | Sign-ins | 2FA codes and passkeys, too. | Bring in your Proton Pass vault, 2FA and passkeys included. A 2FA field gives the current code, and a passkey signs in through enclave's Chrome extension, so its key never enters the browser. | A terminal running `enclave import proton`, `enclave list github` and `enclave passkey github.com` |
 | Setup | One line for most agents. | A skill for any agent with a shell, MCP for the rest, plus a Claude Code plugin and a Gemini CLI extension. | `npx skills add AVGVSTVS96/enclave` and the MCP line |
-| Security | What it can't protect against. | Whoever runs the relay serves the page. A link can claim anyone is asking. An agent set on reading its own vault can. | The CSP header from the live relay, and `hpke.ts` at 80 lines |
-| Host your own | Run your own relay. | It's a Convex app in 133 lines. Pick a theme and a color when you deploy. | `ENCLAVE_THEME=field ENCLAVE_COLOR=… npm run deploy` next to both themes |
+| Security | What it can't protect against. | Whoever runs the relay serves the page. A link can claim anyone is asking. An agent set on reading its own vault can. | The CSP header from the live relay, and `hpke.ts` at 96 lines |
+| Host your own | Run your own relay. | It's a Convex app in 154 lines. Pick a theme and a color when you deploy. | `ENCLAVE_THEME=field ENCLAVE_COLOR=… npm run deploy` next to both themes |
 
 The link, for the anatomy visual (a real shape, made by `vault.ask`):
 
@@ -48,7 +48,7 @@ Before the `#`: a random 22-character slug. After it: who's asking, what for, wh
 
 For the security section's body, in this order:
 
-- The lock is HPKE (RFC 9180): X25519, HKDF-SHA256 and AES-128-GCM. 80 lines on the browser's own Web Crypto, no libraries, tested against the RFC's test vectors.
+- The lock is HPKE (RFC 9180): X25519, HKDF-SHA256 and AES-128-GCM. 96 lines on the browser's own Web Crypto, no libraries, tested against the RFC's test vectors.
 - Answers are padded, so every login seals to the same 304 bytes. The relay can't tell how long your password is.
 - A link works once. It's deleted when the agent picks up the answer, or after 24 hours.
 - The page is one file with a strict Content Security Policy. It can only talk to the relay it came from.
@@ -101,16 +101,16 @@ The brief: "It's for everyone, so it has to be dead simple, grandma-level."
 | --- | --- |
 | 304 bytes | What the relay holds for any login up to 256 bytes¹ |
 | 24 hours | Longest a link lives; it's deleted sooner if the agent picks it up |
-| 80 lines | The encryption, `src/hpke.ts`² |
-| 133 lines | The whole relay, `convex/`² |
-| under 1,000 lines | Everything: CLI, SDK, MCP, vault, relay and page (943)² |
+| 96 lines | The encryption, `src/hpke.ts`² |
+| 154 lines | The whole relay, `convex/`² |
+| about 2,000 lines | Everything: CLI, SDK, MCP, vault, Proton import, passkeys, relay and page (1,997)² |
 | 62 KB | The page, one file, one request, fonts included³ |
-| 230 kB | The npm package, with no dependencies to install⁴ |
+| 248 kB | The npm package, with no dependencies to install⁴ |
 
 1. 32-byte encapsulated key + the JSON answer padded to 256-byte blocks + a 16-byte tag. Measured with `sealAnswer` on `{"password":"x"}`, a typical email and password, and a 164-character API key: all 304.
-2. `wc -l`, which counts blank lines too, so these round up. Under 1,000 is `src/` (516) + `convex/` minus generated files (133) + `page/` (294), before the themes land.
-3. The built page with the ledger theme: 60,705 bytes, of which the two fonts are most. 47 KB over the wire compressed. Measured on Oct 8 from `convex/page.gen.ts` and the dev relay.
-4. `npm pack --dry-run`: 230.1 kB packed, 1.2 MB unpacked. The CLI, MCP server and Convex client are bundled into `dist/`; `package.json` has no `dependencies`.
+2. `wc -l`, which counts blank lines too, so these round up. About 2,000 is `src/` (1,110) + `convex/` minus generated files (154) + `page/` with both themes (733), on Nov 3.
+3. The built page with the ledger theme: 62,348 bytes, of which the two fonts are most. 48 KB over the wire compressed. Measured on Nov 3 from the live relay.
+4. `npm pack --dry-run`: 248.2 kB packed, 1.3 MB unpacked. The CLI, MCP server and Convex client are bundled into `dist/`; `package.json` has no `dependencies`.
 
 ## OG image
 
@@ -145,7 +145,7 @@ First reply:
 ```
 github.com/AVGVSTVS96/enclave
 
-`npx skills add AVGVSTVS96/enclave` for any agent with a shell. MIT, and the relay is 133 lines of Convex if you'd rather run your own
+`npx skills add AVGVSTVS96/enclave` for any agent with a shell. MIT, and the relay is 154 lines of Convex if you'd rather run your own
 ```
 
 ## Claims checked

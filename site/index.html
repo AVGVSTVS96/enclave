@@ -84,7 +84,7 @@
         <dl class="frame facts">
           <div><dt>304 bytes</dt><dd>is what the relay holds, for any login up to 256 bytes.</dd></div>
           <div><dt>24 hours</dt><dd>is the longest a link lives. It’s deleted once your agent has it.</dd></div>
-          <div><dt>80 lines</dt><dd>of encryption, on the browser’s own Web Crypto.</dd></div>
+          <div><dt>96 lines</dt><dd>of encryption, on the browser’s own Web Crypto.</dd></div>
           <div><dt>62 KB</dt><dd>for the whole page: one file, fonts included.</dd></div>
         </dl>
       </section>
@@ -208,7 +208,7 @@
           <div>
             <a class="anchor" href="#self-host">#self-host</a>
             <h2>Run your own relay.</h2>
-            <p class="line">The relay is 133 lines of Convex, plus the page it serves. Pick a theme and a color when you deploy, or write your own theme in plain CSS.</p>
+            <p class="line">The relay is 154 lines of Convex, plus the page it serves. Pick a theme and a color when you deploy, or write your own theme in plain CSS.</p>
             <button class="command" data-copy="ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy"><code><span class="prompt">$</span> ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy</code><svg class="copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.25" y="5.25" width="8" height="8" rx="1.75" /><path d="M10.75 5.25V3.5A1.25 1.25 0 0 0 9.5 2.25h-6A1.25 1.25 0 0 0 2.25 3.5v6a1.25 1.25 0 0 0 1.25 1.25h1.75" /></svg><svg class="check" viewBox="0 0 16 16" aria-hidden="true"><path d="m3 8.5 3.25 3.25L13 5" /></svg><span class="copied" aria-live="polite"></span></button>
             <dl class="knobs">
               <div><dt>ENCLAVE_THEME</dt><dd><code>ledger</code>, <code>field</code>, or a path to your own CSS file</dd></div>
