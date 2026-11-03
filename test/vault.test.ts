@@ -68,6 +68,14 @@ test("an armed passkey signs one sign-in, even when two ask at once", async (t) 
   await assert.rejects(vault.sign(request), /no passkey is ready/)
 })
 
+test("arming a passkey again replaces the earlier arm, so one sign-in is all it gives", async (t) => {
+  const { vault } = await vaultWith(t, { GitHub: { passkey } })
+  await vault.passkey("GitHub")
+  await vault.passkey("GitHub")
+  await vault.sign(request)
+  await assert.rejects(vault.sign(request), /no passkey is ready/)
+})
+
 test("asking needs at least one field, each with its own name", async (t) => {
   const { vault } = await vaultWith(t, {})
   await assert.rejects(vault.ask("x", []))

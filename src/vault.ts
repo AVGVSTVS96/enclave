@@ -249,6 +249,13 @@ export function openVault({
   async function passkey(name: string, field = "passkey", timeout = 300_000) {
     await read(name, field)
     await mkdir(armed, { recursive: true, mode: 0o700 })
+
+    for (const file of (await readdir(armed)).filter((file) => file.endsWith(".json"))) {
+      const arm = JSON.parse(await readFile(join(armed, file), "utf8").catch(() => "{}"))
+
+      if (arm.name === name && arm.field === field) await rm(join(armed, file), { force: true })
+    }
+
     await writeFile(join(armed, `${randomUUID()}.json`), JSON.stringify({ name, field, until: Date.now() + timeout }), {
       mode: 0o600,
     })
