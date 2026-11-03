@@ -236,11 +236,19 @@ enclave passkey GitHub    # then click the site's passkey sign-in
 
 A passkey keeps working in Proton Pass and enclave side by side.
 
-Install the extension once per machine, from a clone of this repo, with Google Chrome on Linux. It's force-installed through Chrome's policy, so it loads in every profile:
+Install the extension once per machine, with Google Chrome on Linux, from a clone of this repo at the release the vault runs. Every release is tagged `v<version>`. It's force-installed through Chrome's policy, so it loads in every profile:
 
 ```sh
-extension/install                                  # signs with enclave on this machine
-extension/install ssh my-server enclave sign       # or with a vault on another machine
+git clone https://github.com/AVGVSTVS96/enclave && cd enclave
+git checkout "v$(enclave --version)"
+extension/install                   # signs with that release on this machine, through npx
+```
+
+or with a vault on another machine:
+
+```sh
+git checkout "v$(ssh my-server enclave --version)"
+extension/install ssh my-server enclave sign
 ```
 
 ## Bring your Proton Pass vault
@@ -366,6 +374,7 @@ ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy
 npm run dev      # builds the page and runs a Convex dev deployment
 npm run check    # typecheck and tests
 npm run build    # bundles the CLI, SDK and types into dist/
+npm version 0.3.0  # a release: sets every version, commits and makes the signed tag v0.3.0
 ```
 
 | Path | What's there |

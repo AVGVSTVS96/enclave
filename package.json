@@ -23,7 +23,8 @@
     "build": "node scripts/build.ts",
     "prepack": "npm run build",
     "check": "node scripts/page.ts && tsc -p . && oxlint && oxfmt --check && node --test 'test/*.test.ts'",
-    "format": "oxfmt && oxlint --fix"
+    "format": "oxfmt && oxlint --fix",
+    "version": "node scripts/version.ts"
   },
   "devDependencies": {
     "@convex-dev/rate-limiter": "^0.4.1",

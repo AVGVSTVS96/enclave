@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 # Installs enclave's extension into Chrome on this machine, for every profile.
-# usage: install [signer command…]   (default: enclave sign)
+# usage: install [signer command…]   (default: npx -y enclave-link@<this extension's version> sign)
 set -euo pipefail
 src=$(cd "$(dirname "$0")" && pwd)
+version=$(jq -r .version "$src/manifest.json")
+if ((!$#)); then
+  npx=$(command -v npx) || { echo "the signer runs with npx, which needs Node.js; or name a signer command" >&2; exit 1; }
+  set -- "$npx" -y "enclave-link@$version"
+  # Fetched now, so a version npm doesn't have fails here, and the first sign-in doesn't wait for it.
+  "$@" --version >/dev/null
+  set -- "$@" sign
+fi
 dir=${XDG_DATA_HOME:-$HOME/.local/share}/enclave-extension
 mkdir -p "$dir"
 rm -rf "$dir/extension" && mkdir "$dir/extension"
@@ -14,7 +22,6 @@ google-chrome-stable --headless=new --no-sandbox --user-data-dir="$(mktemp -d)" 
   --pack-extension="$dir/extension" --pack-extension-key="$dir/key.pem" >/dev/null 2>&1 || true
 [[ -f $dir/extension.crx ]] || { echo "couldn't pack the extension" >&2; exit 1; }
 id=$(openssl pkey -in "$dir/key.pem" -pubout -outform DER 2>/dev/null | sha256sum | head -c 32 | tr 0-9a-f a-p)
-version=$(jq -r .version "$src/manifest.json")
 
 cat >"$dir/update.xml" <<XML
 <?xml version='1.0' encoding='UTF-8'?>
@@ -24,7 +31,6 @@ cat >"$dir/update.xml" <<XML
 XML
 
 cp "$src/host.js" "$dir/host.mjs"
-(($#)) || set -- enclave sign
 printf '%s\n' "$@" | jq -R . | jq -s '{command: .}' >"$dir/host.json"
 printf '#!/bin/sh\nexec %s %s\n' "$(command -v node)" "$dir/host.mjs" >"$dir/host"
 chmod +x "$dir/host"
@@ -35,4 +41,5 @@ jq -n --arg path "$dir/host" --arg origin "chrome-extension://$id/" \
   sudo tee /etc/opt/chrome/native-messaging-hosts/enclave.json >/dev/null
 jq -n --arg entry "$id;file://$dir/update.xml" '{ExtensionInstallForcelist: [$entry]}' |
   sudo tee /etc/opt/chrome/policies/managed/enclave.json >/dev/null
-echo "enclave extension $id installed; restart Chrome to load it"
+echo "enclave extension $version ($id) installed, signing with: $*"
+echo "restart Chrome to load it"
