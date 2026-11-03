@@ -6,7 +6,7 @@ const usage = `enclave: ask a person for a secret through a one-time link, witho
   enclave ask <name> [field...]          print a link asking for <name> (fields default to password)
   enclave wait <name>                    wait for the answer and save it to the vault
   enclave run VAR=<name>/<field>... cmd  run cmd with secrets in its environment, hidden in its output
-  enclave get <name> <field>             print a saved value, only ever into a pipe or $(...)
+  enclave get <name> <field>             print a saved value, for a pipe or $(...)
   enclave passkey <name> [field]         let the browser sign in with a saved passkey, once, in the next 5 minutes
   enclave sign                           sign a passkey request from the browser extension (JSON on stdin)
   enclave import proton [vault...]       copy Proton Pass in through pass-cli: every vault, or the ones named
@@ -15,7 +15,7 @@ const usage = `enclave: ask a person for a secret through a one-time link, witho
   enclave mcp                            serve all of this to an agent over MCP (stdio)
 
 A field named totp holds a 2FA setup key, and get gives its current code. A field named passkey
-holds a passkey: enclave signs with it and never hands out its key.
+holds a passkey: enclave signs with it and keeps its key.
 ENCLAVE_FROM names who's asking on the page, ENCLAVE_HOME holds the vault (~/.enclave),
 and ENCLAVE_RELAY points at a self-hosted relay.`
 
@@ -41,10 +41,8 @@ try {
   } else if (command === "get" && name && rest[0]) {
     process.stdout.write(await vault.get(name, rest[0]))
   } else if (command === "passkey" && name) {
-    const { used } = await vault.passkey(name, rest[0])
-    console.log(`${name}'s passkey is ready for 5 minutes: sign in with a passkey in the browser now`)
-    await used
-    console.log(`${name}'s passkey signed the site's sign-in`)
+    await vault.passkey(name, rest[0])
+    console.log(`${name}'s passkey is ready for one sign-in in the next 5 minutes: click the site's passkey sign-in now`)
   } else if (command === "sign") {
     const request = JSON.parse(await new Response(process.stdin as unknown as ReadableStream).text())
     process.stdout.write(JSON.stringify(await vault.sign(request)))

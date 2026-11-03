@@ -1,7 +1,6 @@
 import { ConvexClient, ConvexHttpClient } from "convex/browser"
 import { makeFunctionReference } from "convex/server"
 import { randomUUID } from "node:crypto"
-import { watch } from "node:fs"
 import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
@@ -150,20 +149,7 @@ export function openVault({
   async function passkey(name: string, field = "passkey", timeout = 300_000) {
     await read(name, field)
     await mkdir(armed, { recursive: true, mode: 0o700 })
-    const path = join(armed, `${randomUUID()}.json`)
-    await writeFile(path, JSON.stringify({ name, field, until: Date.now() + timeout }), { mode: 0o600 })
-    const used = new Promise<void>((resolve, reject) => {
-      const watcher = watch(armed, () => readFile(path).catch(() => done()))
-      const timer = setTimeout(() => done(new Error(`no site asked for ${name}'s passkey in time`)), timeout)
-      const done = (error?: Error) => {
-        watcher.close()
-        clearTimeout(timer)
-        if (error) rm(path, { force: true }).then(() => reject(error))
-        else resolve()
-      }
-    })
-    used.catch(() => undefined)
-    return { used }
+    await writeFile(join(armed, `${randomUUID()}.json`), JSON.stringify({ name, field, until: Date.now() + timeout }), { mode: 0o600 })
   }
 
   async function sign(request: SignRequest) {

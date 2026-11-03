@@ -232,7 +232,7 @@ A field named `passkey` holds a passkey, and the agent signs in with it in Chrom
 enclave passkey GitHub    # then click the site's passkey sign-in
 ```
 
-`enclave passkey` arms the passkey for one sign-in, for up to 5 minutes. When the site asks for a passkey, enclave's Chrome extension hands the request to `enclave sign`, which signs it inside the vault and disarms the passkey. The private key never enters Chrome. Run it in the background, since it waits for that sign-in.
+`enclave passkey` arms the passkey for one sign-in, for up to 5 minutes. When the site asks for a passkey, enclave's Chrome extension hands the request to `enclave sign`, which signs it inside the vault and disarms the passkey. The private key never enters Chrome.
 
 enclave signs the way Proton Pass does, with a signature counter of 0 every time. Sites read 0 as "this authenticator doesn't count", so a passkey keeps working from Proton and from enclave side by side.
 

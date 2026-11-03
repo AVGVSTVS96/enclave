@@ -46,11 +46,11 @@ test("list finds items by name or by website", async (t) => {
 
 test("an armed passkey signs one sign-in, even when two ask at once", async (t) => {
   const { home, vault } = await vaultWith(t, { GitHub: { passkey } })
-  const { used } = await vault.passkey("GitHub")
+  await vault.passkey("GitHub")
   const results = await Promise.allSettled([vault.sign(request), vault.sign(request)])
   assert.deepEqual(results.map((result) => result.status).sort(), ["fulfilled", "rejected"])
-  await used
   assert.deepEqual(await readdir(join(home, "armed")), [])
+  await assert.rejects(vault.sign(request), /no passkey is ready/)
 })
 
 test("asking needs at least one field, each with its own name", async (t) => {

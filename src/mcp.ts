@@ -6,7 +6,7 @@ import * as z from "zod"
 import packageJson from "../package.json" with { type: "json" }
 import type { Vault } from "./vault.ts"
 
-const instructions = `When you need a password, API key or other secret from the person, ask for it with request_secret rather than in chat, so it never passes through the conversation. wait_for_secret saves it, run_with_secrets uses it without showing you its value, and sign_in_with_passkey signs in with a saved passkey.`
+const instructions = `When you need a password, API key or other secret from the person, ask for it with request_secret rather than in chat, so it stays out of the conversation. wait_for_secret saves it, run_with_secrets uses it without showing you its value, and sign_in_with_passkey signs in with a saved passkey.`
 
 const reply = (text: string) => ({ content: [{ type: "text" as const, text }] })
 
@@ -91,7 +91,7 @@ export async function serve(vault: Vault) {
     {
       title: "Sign in with a passkey",
       description:
-        "Let the browser sign in once with a saved passkey, in the next 5 minutes. Call it, then click the site's passkey sign-in: enclave's browser extension asks the vault to sign, and the passkey's key never leaves the vault.",
+        "Let the browser sign in once with a saved passkey, in the next 5 minutes. Call it, then click the site's passkey sign-in: enclave's browser extension asks the vault to sign, and the passkey's key stays in the vault.",
       inputSchema: {
         name: z.string().describe("The saved item with the passkey"),
         field: z.string().optional().describe('The field holding it. Defaults to "passkey".'),
@@ -108,8 +108,8 @@ export async function serve(vault: Vault) {
     "list_secrets",
     {
       title: "List saved secrets",
-      description: "List what's saved in the vault: names and their fields, never values. Check here before asking the person for something.",
-      inputSchema: { search: z.string().optional().describe('Only items whose name or website matches, like "github"') },
+      description: "List what's saved in the vault: names and their fields, not their values. Check here before asking the person for something.",
+      inputSchema: { search: z.string().optional().describe('A name or website to match, like "github"') },
       annotations: { readOnlyHint: true },
     },
     async ({ search }) => {

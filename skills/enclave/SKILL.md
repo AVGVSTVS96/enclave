@@ -6,9 +6,9 @@ license: MIT
 
 # enclave
 
-Secrets reach you through a link and leave the vault only into the program that uses them, so they never pass through the chat or your context. Run `enclave` (or `npx -y enclave-link` if it isn't installed):
+Secrets reach you through a link and go from the vault straight into the program that uses them, so they stay out of the chat and your context. Run `enclave` (or `npx -y enclave-link` if it isn't installed):
 
-1. **Look first.** `enclave list <search>` shows what's saved that matches a name or website, with its fields and never its values. Use what's there before asking anyone.
+1. **Look first.** `enclave list <search>` shows what's saved that matches a name or website, with its fields and not its values. Use what's there before asking anyone.
 
 2. **Ask for what's missing.** `enclave ask <name> [field...]` prints a one-time link. Send it to the person exactly as printed. Name what they'll recognize, and list what you need:
 
@@ -30,12 +30,12 @@ Secrets reach you through a link and leave the vault only into the program that 
 
    To type a value into a login form, pipe it straight into the program that types: `enclave get Netflix password | <typer>`. `enclave get GitHub totp` gives the current 2FA code.
 
-5. **Passkeys.** Run `enclave passkey <name>` in the background, then click the site's passkey sign-in in Chrome. enclave's extension has the vault sign it, and the passkey disarms the moment it's used.
+5. **Passkeys.** Run `enclave passkey <name>`, then click the site's passkey sign-in in Chrome within 5 minutes. enclave's extension has the vault sign it, and the passkey disarms the moment it's used.
 
 `enclave import proton` copies Proton Pass in, 2FA and passkeys included.
 
 ## Keeping secrets out of the chat
 
-- Use a value only inside `enclave run`, or a pipe or `$(...)` that feeds the program needing it. Anything printed, echoed or read from `~/.enclave` lands in your context and the chat's log. `run` hides exact values, not ones you transform.
+- Use a value inside `enclave run`, or a pipe or `$(...)` that feeds the program that needs it: anything printed, echoed or read from `~/.enclave` lands in your context and the chat's log. `run` hides exact values, not ones you transform.
 - If someone pastes a secret into the chat anyway, tell them it's in the chat's history now, and send a link instead.
-- Send each link exactly as `enclave ask` printed it: the key after `#` is what lets only you open the answer.
+- Send each link exactly as `enclave ask` printed it: the key after `#` is what lets you, and nobody else, open the answer.
