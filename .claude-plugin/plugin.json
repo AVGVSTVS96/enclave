@@ -1,6 +1,6 @@
 {
   "name": "enclave",
-  "version": "0.2.10",
+  "version": "0.2.11",
   "description": "Your agent asks for a password by one-time link, not in chat, and uses it without seeing it.",
   "author": {
     "name": "Bassim Shahidy",
