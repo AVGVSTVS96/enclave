@@ -178,7 +178,7 @@ export function openVault({
   async function importProton(vaults: string[] = []) {
     const manifest = join(home, "proton.json")
     const saved = await readFile(manifest, "utf8").catch(() => undefined)
-    const before: Record<string, { name: string; vault: string; fields?: string[] }> = saved ? JSON.parse(saved) : {}
+    const before: Record<string, ProtonImport> = saved ? JSON.parse(saved) : {}
     const read = vaults.length ? vaults : await protonVaults()
     const entries = (await Promise.all(read.map(readProton))).flat()
 
@@ -225,8 +225,10 @@ export function openVault({
       const existing = (await store.get(previous?.name ?? target.name)) ?? {}
       const proton = new Set(previous ? previous.fields : saved ? Object.keys(existing) : [])
       const added = Object.entries(existing).filter(([field]) => !proton.has(field) && !(field in item))
-      imported.set(target.name, { ...Object.fromEntries(added), ...item })
+      const untouched = previous?.changed !== undefined && previous.changed === entry.changed
+      imported.set(target.name, untouched ? { ...item, ...existing } : { ...Object.fromEntries(added), ...item })
       target.fields = Object.keys(item)
+      target.changed = entry.changed
     }
 
     for (const [name, item] of imported) await store.put(name, item)
@@ -324,6 +326,13 @@ export function openVault({
 }
 
 export type Vault = ReturnType<typeof openVault>
+
+interface ProtonImport {
+  name: string
+  vault: string
+  fields?: string[]
+  changed?: string
+}
 
 export const vault = openVault()
 

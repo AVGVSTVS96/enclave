@@ -114,3 +114,27 @@ test("an item imported before field lists keeps the fields hex added on its next
   await vault.importProton()
   assert.equal((await store.get("GitHub"))?.token, "ghp_saved")
 })
+
+test("an import keeps a value saved over Proton's until the item changes in Proton", async (t) => {
+  const { vault, store, set } = await proton(t)
+
+  const github = (password: string, modify_time: string) => [
+    {
+      id: "1",
+      share_id: "s",
+      modify_time,
+      content: { title: "GitHub", content: { Login: { email: "me@a.com", password } } },
+    },
+  ]
+
+  await set({ Vault: github("old", "2026-11-01T10:00:00") })
+  await vault.importProton()
+  await vault.save("GitHub", "password", "changed by hex")
+
+  await vault.importProton()
+  assert.equal((await store.get("GitHub"))?.password, "changed by hex")
+
+  await set({ Vault: github("changed in Proton", "2026-11-03T10:00:00") })
+  await vault.importProton()
+  assert.equal((await store.get("GitHub"))?.password, "changed in Proton")
+})

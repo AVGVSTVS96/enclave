@@ -250,7 +250,7 @@ enclave import proton            # every vault
 enclave import proton Work       # or just the ones you name
 ```
 
-copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title. Proton keeps everything. Run it again to bring in what changed: names stay the same, renames follow, items deleted in Proton leave enclave too, and anything you saved yourself is kept.
+copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title. Proton keeps everything. Run it again to bring in what changed: names stay the same, renames follow, items deleted in Proton leave enclave too, and anything you saved yourself is kept. Once you edit an item in Proton, the fields Proton has take its values again.
 
 2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code, and passkeys as a `passkey` field.
 
