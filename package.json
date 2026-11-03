@@ -1,6 +1,6 @@
 {
   "name": "enclave-link",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Your agent asks for a password by one-time link, not in chat, and uses it without seeing it.",
   "license": "MIT",
   "bin": {
