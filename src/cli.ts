@@ -1,5 +1,7 @@
 #!/usr/bin/env node
+import { readFileSync } from "node:fs"
 import { text } from "node:stream/consumers"
+import * as z from "zod"
 import { signRequest } from "./passkey.ts"
 import { vault } from "./vault.ts"
 
@@ -16,6 +18,7 @@ const usage = `enclave: ask a person for a secret by one-time link, and use it w
   enclave list [search]                  saved names and their fields, or the ones matching a name or site
   enclave rm <name>                      delete a saved item
   enclave mcp                            serve all of this to an agent over MCP (stdio)
+  enclave --version                      print the version
 
 A field named totp holds a 2FA setup key, and get gives its current code. A field named passkey
 holds a passkey: enclave signs with it and keeps its key.
@@ -28,6 +31,12 @@ const [command, name, ...rest] = process.argv.slice(2)
 try {
   if (!command || help.includes(command) || help.includes(name ?? "")) {
     console.log(usage)
+  } else if (command === "--version") {
+    console.log(
+      z
+        .object({ version: z.string() })
+        .parse(JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"))).version,
+    )
   } else if (name?.startsWith("-")) {
     throw new Error(`there's no ${name} option; enclave --help lists what there is`)
   } else if (command === "ask" && name) {
