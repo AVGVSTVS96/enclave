@@ -67,3 +67,20 @@ test("a wait that gives up keeps the link, so the next wait can still collect th
   await assert.rejects(vault.wait("Netflix", AbortSignal.timeout(100)), { name: "TimeoutError" })
   assert.deepEqual(await readdir(join(home, "pending")), ["Netflix.json"])
 })
+
+test("a vault can keep its items in any store, like memory for a one-time answer", async () => {
+  const items = new Map<string, Record<string, string>>([["Netflix", { password: "hunter2", totp: "JBSWY3DPEHPK3PXP" }]])
+  const vault = openVault({
+    home: join(tmpdir(), "enclave-unused"),
+    store: {
+      get: async (name) => items.get(name),
+      put: async (name, item) => void items.set(name, item),
+      remove: async (name) => void items.delete(name),
+      names: async () => [...items.keys()],
+    },
+  })
+  assert.equal(await vault.get("Netflix", "password"), "hunter2")
+  assert.match(await vault.get("Netflix", "totp"), /^\d{6}$/)
+  await vault.remove("Netflix")
+  assert.deepEqual(await vault.list(), [])
+})

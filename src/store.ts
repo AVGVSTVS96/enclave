@@ -12,6 +12,7 @@ const extension = ".enclave"
 
 export class Store {
   readonly dir: string
+  private keys?: Promise<{ publicKey: Uint8Array<ArrayBuffer>; privateKey: Uint8Array<ArrayBuffer> }>
 
   constructor(dir: string) {
     this.dir = dir
@@ -44,7 +45,15 @@ export class Store {
     return join(this.dir, "items", encodeURIComponent(name) + extension)
   }
 
-  private async key(): Promise<{ publicKey: Uint8Array<ArrayBuffer>; privateKey: Uint8Array<ArrayBuffer> }> {
+  private key() {
+    this.keys ??= this.load().catch((error) => {
+      this.keys = undefined
+      throw error
+    })
+    return this.keys
+  }
+
+  private async load(): Promise<{ publicKey: Uint8Array<ArrayBuffer>; privateKey: Uint8Array<ArrayBuffer> }> {
     const path = join(this.dir, "key.json")
     const saved = await readFile(path, "utf8").catch(missing)
     if (saved) {
@@ -58,7 +67,7 @@ export class Store {
         if (error.code !== "EEXIST") throw error
       })
       .finally(() => rm(temporary))
-    return this.key()
+    return this.load()
   }
 
   private async temporary(data: string | Uint8Array) {

@@ -304,7 +304,21 @@ await vault.run(["sh", "-c", 'curl -u "$EMAIL:$PASSWORD" https://example.com'], 
 })
 ```
 
-`vault` reads `ENCLAVE_FROM`, `ENCLAVE_HOME` and `ENCLAVE_RELAY`. For anything else, `openVault({ from, home, relay })` makes one of your own. It also has `get`, `list` and `remove`, the same as the CLI.
+`vault` reads `ENCLAVE_FROM`, `ENCLAVE_HOME` and `ENCLAVE_RELAY`. For anything else, `openVault({ from, home, relay, store })` makes one of your own. It also has `get`, `list` and `remove`, the same as the CLI.
+
+Answers are saved to `~/.enclave` by default. To keep them somewhere else, pass a `store`: any object with `get`, `put`, `remove` and `names`, like your own database. For a one-time answer that's never written to disk, keep it in memory:
+
+```ts
+const answers = new Map()
+const oneTime = openVault({
+  store: {
+    get: async (name) => answers.get(name),
+    put: async (name, item) => void answers.set(name, item),
+    remove: async (name) => void answers.delete(name),
+    names: async () => [...answers.keys()],
+  },
+})
+```
 
 ## Security
 

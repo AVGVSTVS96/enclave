@@ -59,7 +59,7 @@ try {
     const { serve } = await import("./mcp.ts")
     await serve(vault)
   } else {
-    console.log(usage)
+    console.error(usage)
     process.exitCode = 1
   }
 } catch (error) {

@@ -17,7 +17,10 @@ export interface VaultOptions {
   from?: string
   home?: string
   relay?: string
+  store?: ItemStore
 }
+
+export type ItemStore = Pick<Store, "get" | "put" | "remove" | "names">
 
 export interface Request {
   url: string
@@ -43,8 +46,8 @@ export function openVault({
   from = process.env.ENCLAVE_FROM,
   home = process.env.ENCLAVE_HOME ?? join(homedir(), ".enclave"),
   relay = process.env.ENCLAVE_RELAY ?? hostedRelay,
+  store = new Store(home),
 }: VaultOptions = {}) {
-  const store = new Store(home)
   const pendingPath = (name: string) => join(home, "pending", `${encodeURIComponent(name)}.json`)
 
   async function readPending(name: string): Promise<Pending | undefined> {
