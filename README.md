@@ -270,6 +270,7 @@ npm install -g enclave-link      # or run any of these with npx -y enclave-link
 | `enclave wait <name>` | Waits for the answer and saves it. Exits 1 if the link expires first. |
 | `enclave run VAR=<name>/<field>… <command…>` | Runs a command with secrets in its environment, hidden in its output. |
 | `enclave get <name> <field>` | Prints a saved value, for a pipe or `$(…)`. |
+| `enclave save <name> <field>` | Saves a value piped in, like a token the agent just made, without it passing through the chat. |
 | `enclave passkey <name> [field]` | Arms a saved passkey for the next sign-in on its site, through the extension. |
 | `enclave sign` | Signs a passkey request (JSON on stdin) with an armed passkey. The extension runs it. |
 | `enclave import proton [vault…]` | Copies Proton Pass in through pass-cli: every vault, or the ones named. |

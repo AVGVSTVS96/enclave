@@ -28,7 +28,7 @@ Secrets reach you through a link and go from the vault straight into the program
    enclave run KEY="OpenAI API key/key" sh -c 'curl -s https://api.openai.com/v1/models -H "Authorization: Bearer $KEY"'
    ```
 
-   To type a value into a login form, pipe it straight into the program that types: `enclave get Netflix password | <typer>`. `enclave get GitHub totp` gives the current 2FA code.
+   To type a value into a login form, pipe it straight into the program that types: `enclave get Netflix password | <typer>`. `enclave get GitHub totp` gives the current 2FA code. A token you make yourself goes in the same way: `<command that prints it> | enclave save <name> <field>`.
 
 5. **Passkeys.** Run `enclave passkey <name>`, then click the site's passkey sign-in in Chrome within 5 minutes. enclave's extension has the vault sign it, and the passkey disarms the moment it's used.
 

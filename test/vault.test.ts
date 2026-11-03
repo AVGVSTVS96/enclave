@@ -106,3 +106,10 @@ test("a vault can keep its items in any store, like memory for a one-time answer
   await vault.remove("Netflix")
   assert.deepEqual(await vault.list(), [])
 })
+
+test("save adds a field to an item and keeps the rest", async (t) => {
+  const { vault } = await vaultWith(t, { npm: { username: "octocat" } })
+  await vault.save("npm", "token", "npm_abc")
+  assert.equal(await vault.get("npm", "token"), "npm_abc")
+  assert.equal(await vault.get("npm", "username"), "octocat")
+})

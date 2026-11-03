@@ -9,6 +9,7 @@ const usage = `enclave: a vault for your agent. Ask a person for a secret throug
   enclave wait <name>                    wait for the answer and save it to the vault
   enclave run VAR=<name>/<field>... cmd  run cmd with secrets in its environment, hidden in its output
   enclave get <name> <field>             print a saved value, for a pipe or $(...)
+  enclave save <name> <field>            save a value piped in, like a token you just made
   enclave passkey <name> [field]         let the browser sign in with a saved passkey, once, in the next 5 minutes
   enclave sign                           sign a passkey request from the browser extension (JSON on stdin)
   enclave import proton [vault...]       copy Proton Pass in through pass-cli: every vault, or the ones named
@@ -47,6 +48,9 @@ try {
     process.exitCode = await vault.run(args.slice(split), secrets)
   } else if (command === "get" && name && rest[0]) {
     process.stdout.write(await vault.get(name, rest[0]))
+  } else if (command === "save" && name && rest[0]) {
+    await vault.save(name, rest[0], (await text(process.stdin)).replace(/\r?\n$/, ""))
+    console.log(`saved ${name}: ${rest[0]}`)
   } else if (command === "passkey" && name) {
     await vault.passkey(name, rest[0])
     console.log(

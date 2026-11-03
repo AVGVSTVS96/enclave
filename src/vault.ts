@@ -273,6 +273,10 @@ export function openVault({
     throw new Error(`no passkey is ready for ${request.rpId ?? new URL(request.origin).hostname}`)
   }
 
+  async function save(name: string, field: string, value: string) {
+    await store.put(name, { ...(await store.get(name)), [field]: value })
+  }
+
   async function remove(name: string) {
     await store.remove(name)
   }
@@ -291,7 +295,7 @@ export function openVault({
     return runWithSecrets(command, Object.fromEntries(values), stdio)
   }
 
-  return { ask, wait, get, list, remove, run, importProton, passkey, sign }
+  return { ask, wait, get, save, list, remove, run, importProton, passkey, sign }
 }
 
 export type Vault = ReturnType<typeof openVault>
