@@ -8,7 +8,7 @@ import { openAnswer } from "./answer.ts"
 import { decode, encode } from "./base64url.ts"
 import { generateKeyPair } from "./hpke.ts"
 import { accepts, signAssertion, type SignRequest } from "./passkey.ts"
-import { protonVaults, readProton, toItems } from "./proton.ts"
+import { protonVaults, readProton, toItem, toItems, type ProtonEntry } from "./proton.ts"
 import { runWithSecrets, type Stdio } from "./run.ts"
 import { Store, type Item } from "./store.ts"
 import { totp } from "./totp.ts"
@@ -138,10 +138,38 @@ export function openVault({
   }
 
   async function importProton(vaults: string[] = []) {
-    const items = new Map<string, Item>()
-    for (const vaultName of vaults.length ? vaults : await protonVaults())
-      for await (const entry of readProton(vaultName)) for (const [name, item] of toItems([entry], items)) await store.put(name, item)
-    return items
+    const manifest = join(home, "proton.json")
+    const saved = await readFile(manifest, "utf8").catch(() => undefined)
+    const before: Record<string, { name: string; vault: string }> = saved ? JSON.parse(saved) : {}
+    const read = vaults.length ? vaults : await protonVaults()
+    const entries = (await Promise.all(read.map(readProton))).flat()
+
+    const protonNames = new Set(Object.values(before).map(({ name }) => name))
+    const taken = new Map<string, unknown>(saved ? (await store.names()).filter((name) => !protonNames.has(name)).map((name) => [name, true]) : [])
+    const after: typeof before = {}
+    const fresh: ProtonEntry[] = []
+    for (const entry of entries) {
+      const name = before[entry.id]?.name
+      const title = entry.content.title.trim() || "Untitled"
+      if (name && (name === title || name.startsWith(`${title} (`)) && !taken.has(name) && Object.keys(toItem(entry.content)).length) {
+        after[entry.id] = { name, vault: entry.vault }
+        taken.set(name, true)
+      } else fresh.push(entry)
+    }
+    const byContent = new Map(fresh.map((entry) => [entry.content, entry]))
+    for (const [name, , content] of toItems(fresh.map((entry) => entry.content), taken)) after[byContent.get(content)!.id] = { name, vault: byContent.get(content)!.vault }
+
+    const imported = new Map(entries.filter((entry) => after[entry.id]).map((entry) => [after[entry.id]!.name, toItem(entry.content)]))
+    for (const [name, item] of imported) await store.put(name, item)
+    const removed = Object.values(before)
+      .filter(({ name, vault }) => read.includes(vault) && !imported.has(name))
+      .map(({ name }) => name)
+    for (const name of removed) await store.remove(name)
+    const kept = Object.fromEntries(Object.entries(before).filter(([, { vault }]) => !read.includes(vault)))
+    const temporary = `${manifest}.${randomUUID()}`
+    await writeFile(temporary, JSON.stringify({ ...kept, ...after }), { mode: 0o600 })
+    await rename(temporary, manifest)
+    return { items: [...imported].map(([name, item]) => ({ name, fields: Object.keys(item) })), removed }
   }
 
   const armed = join(home, "armed")

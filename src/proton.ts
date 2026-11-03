@@ -19,18 +19,20 @@ export interface Passkey {
   privateKey: string
 }
 
+export interface ProtonEntry {
+  id: string
+  vault: string
+  content: ProtonItem
+}
+
 const renamed: Record<string, string> = { totp_uri: "totp" }
 const run = promisify(execFile)
 
-async function pass(args: string[], attempts = 6): Promise<any> {
-  for (let attempt = 1; ; attempt++) {
-    try {
-      return JSON.parse((await run(process.env.ENCLAVE_PASS_CLI ?? "pass-cli", args, { maxBuffer: 256 << 20 })).stdout)
-    } catch (error) {
-      if (attempt >= attempts) throw error
-      await new Promise((resolve) => setTimeout(resolve, 2 ** attempt * 1000))
-    }
-  }
+async function pass(args: string[]): Promise<any> {
+  const { stdout } = await run(process.env.ENCLAVE_PASS_CLI ?? "pass-cli", args, { maxBuffer: 256 << 20 }).catch((error) => {
+    throw new Error(`pass-cli ${args.slice(0, 2).join(" ")} failed (is it signed in? pass-cli info): ${String(error.stderr || error.message).trim()}`)
+  })
+  return JSON.parse(stdout)
 }
 
 export async function protonVaults(): Promise<string[]> {
@@ -38,27 +40,22 @@ export async function protonVaults(): Promise<string[]> {
   return vaults.map((vault: { name: string }) => vault.name)
 }
 
-export async function* readProton(vaultName: string) {
-  const list = (flags: string[] = [], attempts?: number) =>
-    pass(["item", "list", `--vault-name=${vaultName}`, "--filter-state=active", "--output=json", ...flags], attempts)
-  const full = await list(["--show-secrets"], 1).catch(() => undefined)
-  if (full) return yield* full.items.map((item: { content: ProtonItem }) => item.content)
-
-  const { items } = await list()
-  for (const { id, share_id } of items as { id: string; share_id: string }[])
-    yield (await pass(["item", "view", `--share-id=${share_id}`, `--item-id=${id}`, "--output=json"])).item.content as ProtonItem
+export async function readProton(vault: string): Promise<ProtonEntry[]> {
+  const { items } = await pass(["item", "list", `--vault-name=${vault}`, "--filter-state=active", "--output=json", "--show-secrets"])
+  return items.map((item: { id: string; share_id: string; content: ProtonItem }) => ({ id: `${item.share_id}/${item.id}`, vault, content: item.content }))
 }
 
-export function* toItems(proton: Iterable<ProtonItem>, items = new Map<string, Item>()) {
+export function* toItems<Entry extends ProtonItem>(proton: Iterable<Entry>, items = new Map<string, unknown>()) {
   for (const entry of proton) {
     const item = toItem(entry)
     if (!Object.keys(item).length) continue
     const who = item.email ?? item.username
-    let name = entry.title.trim() || "Untitled"
-    if (items.has(name) && who) name = `${name} (${who})`
-    for (let n = 2; items.has(name); n++) name = `${entry.title} (${n})`
+    const title = entry.title.trim() || "Untitled"
+    let name = title
+    if (items.has(name) && who) name = `${title} (${who})`
+    for (let n = 2; items.has(name); n++) name = `${title} (${n})`
     items.set(name, item)
-    yield [name, item] as const
+    yield [name, item, entry] as const
   }
 }
 
@@ -79,7 +76,10 @@ export function toItem({ content, note, extra_fields = [] }: ProtonItem): Item {
       else add(renamed[field] ?? field, value)
     }
   }
-  for (const extra of extra_fields) add(extra.name.toLowerCase(), Object.values(extra.content)[0])
+  for (const extra of extra_fields) {
+    const [kind, value] = Object.entries(extra.content)[0] ?? []
+    add(kind === "Totp" ? "totp" : extra.name.toLowerCase(), value)
+  }
   add("note", note)
   return item
 }

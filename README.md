@@ -252,9 +252,9 @@ enclave import proton            # every vault
 enclave import proton Work       # or just the ones you name
 ```
 
-copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title (two items with the same title get the account or a number after it). Proton keeps everything. Run it again to bring in what changed; it replaces items with the same name.
+copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title (two items with the same title get the account or a number after it). Proton keeps everything. Run it again to bring in what changed: each Proton item keeps its name across imports, a renamed one follows its new title, one you deleted in Proton leaves enclave too, and items saved by link are left alone. `~/.enclave/proton.json` remembers which item is which, by Proton's IDs and names only.
 
-2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does. `ENCLAVE_PASS_CLI` names a different pass-cli, like one signed in as a Proton Pass agent.
+2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does.
 
 ## CLI
 

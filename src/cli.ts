@@ -47,9 +47,10 @@ try {
     const request = JSON.parse(await new Response(process.stdin as unknown as ReadableStream).text())
     process.stdout.write(JSON.stringify(await vault.sign(request)))
   } else if (command === "import" && name === "proton") {
-    const items = [...(await vault.importProton(rest)).values()]
-    const count = (field: string) => items.filter((item) => Object.keys(item).some((key) => key.split(" ")[0] === field)).length
+    const { items, removed } = await vault.importProton(rest)
+    const count = (field: string) => items.filter((item) => item.fields.some((key) => key.split(" ")[0] === field)).length
     console.log(`imported ${items.length} items: ${count("password")} with a password, ${count("totp")} with 2FA, ${count("passkey")} with a passkey`)
+    if (removed.length) console.log(`removed ${removed.length} deleted from Proton: ${removed.join(", ")}`)
   } else if (command === "list") {
     for (const item of await vault.list([name, ...rest].join(" ").trim() || undefined)) console.log(`${item.name}: ${item.fields.join(", ")}`)
   } else if (command === "rm" && name) {
