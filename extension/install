@@ -8,6 +8,7 @@ mkdir -p "$dir"
 rm -rf "$dir/extension" && mkdir "$dir/extension"
 cp "$src"/{manifest.json,page.js,bridge.js,worker.js} "$dir/extension/"
 [[ -f $dir/key.pem ]] || openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$dir/key.pem" 2>/dev/null
+rm -f "$dir/extension.crx"
 
 google-chrome-stable --headless=new --no-sandbox --user-data-dir="$(mktemp -d)" \
   --pack-extension="$dir/extension" --pack-extension-key="$dir/key.pem" >/dev/null 2>&1 || true
