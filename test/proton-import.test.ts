@@ -34,7 +34,7 @@ console.log(JSON.stringify(args[0] === "vault" ? { vaults: Object.keys(vaults).m
   return {
     vault: openVault({ home }),
     store: new Store(home),
-    set: (vaults: Record<string, ReturnType<typeof login>[]>) => writeFile(data, JSON.stringify(vaults)),
+    set: (vaults: Record<string, object[]>) => writeFile(data, JSON.stringify(vaults)),
   }
 }
 
@@ -74,4 +74,22 @@ test("a re-import keeps every name on the same account, follows renames and drop
   ])
   assert.ok((await store.names()).includes("Google (me@work.com)"))
   assert.ok((await store.names()).includes("Twitter"))
+})
+
+test("a field saved onto an imported item stays through re-imports, and a field Proton dropped goes", async (t) => {
+  const { vault, store, set } = await proton(t)
+
+  const github = (fields: Record<string, string>) => [
+    { id: "1", share_id: "s", content: { title: "GitHub", content: { Login: fields } } },
+  ]
+
+  await set({ Vault: github({ email: "me@a.com", password: "x", username: "me" }) })
+  await vault.importProton()
+  await vault.save("GitHub", "token", "ghp_saved")
+
+  await set({ Vault: github({ email: "me@a.com", password: "y" }) })
+  await vault.importProton()
+  assert.deepEqual(await store.get("GitHub"), { email: "me@a.com", password: "y", token: "ghp_saved" })
+  await vault.importProton()
+  assert.equal((await store.get("GitHub"))?.token, "ghp_saved")
 })

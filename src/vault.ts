@@ -178,7 +178,7 @@ export function openVault({
   async function importProton(vaults: string[] = []) {
     const manifest = join(home, "proton.json")
     const saved = await readFile(manifest, "utf8").catch(() => undefined)
-    const before: Record<string, { name: string; vault: string }> = saved ? JSON.parse(saved) : {}
+    const before: Record<string, { name: string; vault: string; fields?: string[] }> = saved ? JSON.parse(saved) : {}
     const read = vaults.length ? vaults : await protonVaults()
     const entries = (await Promise.all(read.map(readProton))).flat()
 
@@ -214,9 +214,20 @@ export function openVault({
     ))
       after[byContent.get(content)!.id] = { name, vault: byContent.get(content)!.vault }
 
-    const imported = new Map(
-      entries.filter((entry) => after[entry.id]).map((entry) => [after[entry.id]!.name, toItem(entry.content)]),
-    )
+    const imported = new Map<string, Item>()
+
+    for (const entry of entries) {
+      const target = after[entry.id]
+
+      if (!target) continue
+      const item = toItem(entry.content)
+      const previous = before[entry.id]
+      const proton = new Set(previous?.fields)
+      const existing = previous?.fields ? ((await store.get(previous.name)) ?? {}) : {}
+      const added = Object.entries(existing).filter(([field]) => !proton.has(field) && !(field in item))
+      imported.set(target.name, { ...Object.fromEntries(added), ...item })
+      target.fields = Object.keys(item)
+    }
 
     for (const [name, item] of imported) await store.put(name, item)
 
