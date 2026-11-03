@@ -3,7 +3,7 @@ import { text } from "node:stream/consumers"
 import { signRequest } from "./passkey.ts"
 import { vault } from "./vault.ts"
 
-const usage = `enclave: a vault for your agent. Ask a person for a secret through a one-time link, and use it without seeing it
+const usage = `enclave: ask a person for a secret through a one-time link, without ever seeing it
 
   enclave ask <name> [field...]          print a link asking for <name> (fields default to password)
   enclave wait <name>                    wait for the answer and save it to the vault
