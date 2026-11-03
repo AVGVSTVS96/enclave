@@ -6,7 +6,7 @@ license: MIT
 
 # enclave
 
-Never ask for a secret in chat, and never print one. Run `enclave` (or `npx -y enclave-link` if it isn't installed):
+Secrets reach you through a link and leave the vault only into the program that uses them, so they never pass through the chat or your context. Run `enclave` (or `npx -y enclave-link` if it isn't installed):
 
 1. **Ask.** `enclave ask <name> [field...]` prints a one-time link. Send it to the person exactly as printed. Name what they'll recognize, and list what you need:
 
@@ -32,8 +32,8 @@ Never ask for a secret in chat, and never print one. Run `enclave` (or `npx -y e
 
 `enclave list` shows what's saved: names and fields, never values. `enclave import proton <vault>` copies a Proton Pass vault in, 2FA and passkeys included.
 
-## Rules
+## Keeping secrets out of the chat
 
-- Never print `enclave get` output, read files in `~/.enclave`, or echo a secret's variable. `run` hides exact values, not ones you transform.
+- Use a value only inside `enclave run`, or a pipe or `$(...)` that feeds the program needing it. Anything printed, echoed or read from `~/.enclave` lands in your context and the chat's log. `run` hides exact values, not ones you transform.
 - If someone pastes a secret into the chat anyway, tell them it's in the chat's history now, and send a link instead.
-- A link only ever comes from `enclave ask`. Don't make your own.
+- Send each link exactly as `enclave ask` printed it: the key after `#` is what lets only you open the answer.

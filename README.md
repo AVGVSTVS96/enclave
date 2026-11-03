@@ -38,7 +38,7 @@ The skill teaches the agent to send a link instead of asking in chat, and runs e
 
 **Agents that use MCP** get the same thing as tools. Add the server below, and add this line to the agent's instructions, because tools alone don't stop a model from asking in chat:
 
-> Never ask for a password, API key or other secret in chat. Use the enclave tools.
+> When you need a password, API key or other secret, ask for it with the enclave tools rather than in chat.
 
 <details>
 <summary><b>Claude Code</b></summary>
