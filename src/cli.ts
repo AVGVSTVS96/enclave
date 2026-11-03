@@ -49,7 +49,10 @@ try {
   } else if (command === "get" && name && rest[0]) {
     process.stdout.write(await vault.get(name, rest[0]))
   } else if (command === "save" && name && rest[0]) {
-    await vault.save(name, rest[0], (await text(process.stdin)).replace(/\r?\n$/, ""))
+    const value = (await text(process.stdin)).replace(/\r?\n$/, "")
+
+    if (!value) throw new Error(`nothing came in to save as ${name}'s ${rest[0]}`)
+    await vault.save(name, rest[0], value)
     console.log(`saved ${name}: ${rest[0]}`)
   } else if (command === "passkey" && name) {
     await vault.passkey(name, rest[0])
