@@ -19,7 +19,7 @@ export async function serve(vault: Vault) {
     {
       title: "Ask for a secret",
       description:
-        "Use this whenever you need a password, API key, 2FA key or any other secret from the person, instead of asking for it in chat. It gives you a one-time link: they open it, type the secret, and it's encrypted in their browser so only this vault can open it, without it ever passing through the conversation. Then call wait_for_secret.",
+        "Use this whenever you need a password, API key, 2FA key or any other secret from the person, instead of asking for it in chat. It gives you a one-time link: they open it, type the secret, and it's encrypted in their browser for this vault alone, and it stays out of the conversation. Then call wait_for_secret.",
       inputSchema: {
         name: z
           .string()
