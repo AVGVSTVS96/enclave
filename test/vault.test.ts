@@ -76,6 +76,14 @@ test("arming a passkey again replaces the earlier arm, so one sign-in is all it 
   await assert.rejects(vault.sign(request), /no passkey is ready/)
 })
 
+test("an armed passkey whose item was deleted is skipped, so other arms still sign", async (t) => {
+  const { vault } = await vaultWith(t, { GitHub: { passkey }, Old: { passkey } })
+  await vault.passkey("Old")
+  await vault.passkey("GitHub")
+  await vault.remove("Old")
+  await vault.sign(request)
+})
+
 test("asking needs at least one field, each with its own name", async (t) => {
   const { vault } = await vaultWith(t, {})
   await assert.rejects(vault.ask("x", []))

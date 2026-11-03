@@ -273,7 +273,14 @@ export function openVault({
         continue
       }
 
-      const key = JSON.parse(await read(arm.name, arm.field))
+      const saved = (await store.get(arm.name))?.[arm.field]
+
+      if (!saved) {
+        await rm(path, { force: true })
+        continue
+      }
+
+      const key = JSON.parse(saved)
 
       if (!accepts(key, request)) continue
 
