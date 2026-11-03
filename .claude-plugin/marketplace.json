@@ -1,12 +1,15 @@
 {
   "name": "enclave",
   "description": "enclave for Claude Code: ask for secrets through a one-time encrypted link instead of chat",
-  "owner": { "name": "Bassim Shahidy", "url": "https://github.com/AVGVSTVS96" },
+  "owner": {
+    "name": "Bassim Shahidy",
+    "url": "https://github.com/AVGVSTVS96"
+  },
   "plugins": [
     {
       "name": "enclave",
       "source": "./",
-      "description": "Ask a person for a secret through a one-time encrypted link, keep it in your own vault, and use it without seeing it"
+      "description": "A vault for your agent: ask for secrets by encrypted one-time link, use them unseen, 2FA and passkeys too"
     }
   ]
 }

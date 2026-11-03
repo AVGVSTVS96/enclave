@@ -1,7 +1,7 @@
 {
   "name": "enclave-link",
-  "version": "0.1.0",
-  "description": "Ask a person for a secret through a one-time link. It's encrypted in their browser, and only your agent can open it.",
+  "version": "0.2.0",
+  "description": "A vault for your agent: ask for secrets by encrypted one-time link, use them unseen, 2FA and passkeys too",
   "license": "MIT",
   "bin": {
     "enclave": "dist/enclave.js"

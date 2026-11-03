@@ -2,20 +2,42 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.avgvstvs96/enclave",
   "title": "enclave",
-  "description": "Ask a person for a secret through a one-time encrypted link, keep it in your own vault, and use it without seeing it",
-  "version": "0.1.0",
-  "repository": { "url": "https://github.com/AVGVSTVS96/enclave", "source": "github" },
+  "description": "Secrets for your agent by encrypted one-time link, used unseen, with 2FA codes and passkeys",
+  "version": "0.2.0",
+  "repository": {
+    "url": "https://github.com/AVGVSTVS96/enclave",
+    "source": "github"
+  },
   "packages": [
     {
       "registryType": "npm",
       "identifier": "enclave-link",
-      "version": "0.1.0",
-      "transport": { "type": "stdio" },
-      "packageArguments": [{ "type": "positional", "value": "mcp" }],
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "packageArguments": [
+        {
+          "type": "positional",
+          "value": "mcp"
+        }
+      ],
       "environmentVariables": [
-        { "name": "ENCLAVE_FROM", "description": "Who's asking, shown on the page", "isRequired": false },
-        { "name": "ENCLAVE_HOME", "description": "Where the vault lives (default ~/.enclave)", "isRequired": false },
-        { "name": "ENCLAVE_RELAY", "description": "A self-hosted relay's Convex URL", "isRequired": false }
+        {
+          "name": "ENCLAVE_FROM",
+          "description": "Who's asking, shown on the page",
+          "isRequired": false
+        },
+        {
+          "name": "ENCLAVE_HOME",
+          "description": "Where the vault lives (default ~/.enclave)",
+          "isRequired": false
+        },
+        {
+          "name": "ENCLAVE_RELAY",
+          "description": "A self-hosted relay's Convex URL",
+          "isRequired": false
+        }
       ]
     }
   ]
