@@ -1,9 +1,9 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.avgvstvs96/enclave",
+  "name": "io.github.AVGVSTVS96/enclave",
   "title": "enclave",
   "description": "Secrets for your agent by encrypted one-time link, used unseen, with 2FA codes and passkeys",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "repository": {
     "url": "https://github.com/AVGVSTVS96/enclave",
     "source": "github"
@@ -12,7 +12,7 @@
     {
       "registryType": "npm",
       "identifier": "enclave-link",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "transport": {
         "type": "stdio"
       },

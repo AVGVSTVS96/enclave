@@ -1,6 +1,6 @@
 {
   "name": "enclave",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A vault for your agent: ask for secrets by encrypted one-time link, use them unseen, 2FA and passkeys too",
   "mcpServers": {
     "enclave": {
