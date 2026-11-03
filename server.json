@@ -3,7 +3,7 @@
   "name": "io.github.AVGVSTVS96/enclave",
   "title": "enclave",
   "description": "Ask a person for a secret through a one-time encrypted link, and use it without seeing it",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "repository": {
     "url": "https://github.com/AVGVSTVS96/enclave",
     "source": "github"
@@ -12,7 +12,7 @@
     {
       "registryType": "npm",
       "identifier": "enclave-link",
-      "version": "0.2.2",
+      "version": "0.2.3",
       "transport": {
         "type": "stdio"
       },
