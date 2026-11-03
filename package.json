@@ -1,7 +1,7 @@
 {
   "name": "enclave-link",
   "version": "0.2.3",
-  "description": "Ask a person for a secret through a one-time link. It's encrypted in their browser, and only your agent can open it.",
+  "description": "Your agent asks for a password by one-time link, not in chat, and uses it without seeing it.",
   "license": "MIT",
   "bin": {
     "enclave": "dist/enclave.js"

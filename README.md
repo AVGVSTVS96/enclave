@@ -5,7 +5,7 @@
   </picture>
 </h1>
 
-Your AI agent needs your Netflix password. Instead of asking in chat, it sends you a link. You open it, type the password (or let your password manager fill it) and tap **Send**. It's locked in your browser before it leaves, so only your agent can open it. The agent keeps it in a vault of its own and uses it later without ever seeing it.
+Your AI agent needs your Netflix password. Instead of asking in chat, it sends you a link. You type the password (or your password manager fills it) and tap **Send**. It's locked in your browser before it leaves, so only your agent can open it. The agent keeps it in a vault of its own, next to 2FA codes and passkeys, and uses it later without seeing it.
 
 <p>
   <picture>
@@ -34,7 +34,7 @@ It works out of the box with a hosted relay. No accounts, no keys to set up, not
 npx skills add AVGVSTVS96/enclave
 ```
 
-The skill teaches the agent to send a link instead of asking in chat, and runs enclave with `npx`, so there's nothing else to install.
+It runs enclave with `npx`, so there's nothing else to install.
 
 **Agents that use MCP** get the same thing as tools. Add the server below, and add this line to the agent's instructions, because tools alone don't stop a model from asking in chat:
 
@@ -63,7 +63,7 @@ claude mcp add enclave -- npx -y enclave-link mcp
 codex mcp add enclave -- npx -y enclave-link mcp
 ```
 
-Codex stops a tool after 60 seconds by default. `wait_for_secret` waits up to 25 minutes a call (the agent calls it again if the person needs longer), so add this under `[mcp_servers.enclave]` in `~/.codex/config.toml`:
+Codex stops a tool after 60 seconds by default, and `wait_for_secret` can wait 25 minutes, so add this under `[mcp_servers.enclave]` in `~/.codex/config.toml`:
 
 ```toml
 tool_timeout_sec = 1800
@@ -188,7 +188,7 @@ Run `goose configure`, choose **Add Extension → Command-line Extension**, ente
 
 </details>
 
-**ChatGPT, Claude.ai and the Gemini and Grok apps** can't use enclave yet. They run in the cloud with no computer of yours behind them, and enclave keeps the vault on the computer where the agent runs. What would make them work is an enclave server you run yourself that the app reaches over remote MCP; it doesn't exist yet. Their desktop and coding-agent versions above work today.
+**ChatGPT, Claude.ai and the Gemini and Grok apps** can't use enclave yet: they run in the cloud, and the vault lives on the computer where the agent runs. Their desktop and coding-agent versions above work.
 
 **Your own code** can use the TypeScript SDK; see [SDK](#sdk).
 
@@ -232,11 +232,9 @@ A field named `passkey` holds a passkey, and the agent signs in with it in Chrom
 enclave passkey GitHub    # then click the site's passkey sign-in
 ```
 
-`enclave passkey` arms the passkey for one sign-in, for up to 5 minutes. When the site asks for a passkey, enclave's Chrome extension hands the request to `enclave sign`, which signs it inside the vault and disarms the passkey. The private key never enters Chrome.
+`enclave passkey` arms the passkey for one sign-in, for up to 5 minutes. When the site asks for a passkey, enclave's Chrome extension hands the request to `enclave sign`, which signs it inside the vault and disarms the passkey. The private key never leaves the vault: `enclave get` and `enclave run` refuse passkey fields.
 
-enclave signs the way Proton Pass does, with a signature counter of 0 every time. Sites read 0 as "this authenticator doesn't count", so a passkey keeps working from Proton and from enclave side by side.
-
-A passkey's private key never comes out: `enclave get` and `enclave run` refuse passkey fields, and only `enclave sign` uses them.
+A passkey keeps working in Proton Pass and enclave side by side.
 
 Install the extension once per machine, from a clone of this repo, with Google Chrome on Linux. It's force-installed through Chrome's policy, so it loads in every profile:
 
@@ -252,9 +250,9 @@ enclave import proton            # every vault
 enclave import proton Work       # or just the ones you name
 ```
 
-copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title (two items with the same title get the account or a number after it). Proton keeps everything. Run it again to bring in what changed: each Proton item keeps its name across imports, a renamed one follows its new title, one you deleted in Proton leaves enclave too, and items saved by link are left alone. `~/.enclave/proton.json` remembers which item is which, by Proton's IDs and names only.
+copies [Proton Pass](https://proton.me/pass) in through [pass-cli](https://github.com/protonpass/pass-cli): logins, 2FA, passkeys, notes, cards, SSH keys and custom fields, one item per Proton item, named by its title. Proton keeps everything. Run it again to bring in what changed: names stay the same, renames follow, items deleted in Proton leave enclave too, and anything you saved yourself is kept.
 
-2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code. Passkeys come in as a `passkey` field: Proton keeps each passkey's private key in the item, and enclave unpacks it the way Proton's own [export code](https://github.com/protonpass/proton-pass-common/blob/main/proton-pass-common/src/cxf/credentials/passkey.rs) does.
+2FA comes in as a `totp` field, so `enclave get <name> totp` gives the current code, and passkeys as a `passkey` field.
 
 ## CLI
 
@@ -329,7 +327,7 @@ The vault keeps each item encrypted in `~/.enclave/items`, sealed to the vault's
 
 What enclave can't protect against:
 
-- **Whoever runs the relay sends you the page.** Your browser downloads the page, including the code that locks your password, from the relay each time you open a link. What the relay stores can't be read, but if someone took over the relay's Convex account, they could change the page to copy what you type before locking it. Every website that encrypts in your browser works this way. The page's script is 128 lines in [`page/page.ts`](page/page.ts) plus the encryption in [`src/hpke.ts`](src/hpke.ts), served as one file with a strict Content Security Policy, so you can read exactly what it runs. If you'd rather trust nobody's relay, [host your own](#host-your-own).
+- **Whoever runs the relay sends you the page.** Your browser downloads the page, including the code that locks your password, from the relay each time you open a link. What the relay stores can't be read, but if someone took over the relay's Convex account, they could change the page to copy what you type before locking it. The page's script is 128 lines in [`page/page.ts`](page/page.ts) plus the encryption in [`src/hpke.ts`](src/hpke.ts), served as one file with a strict Content Security Policy, so you can read exactly what it runs. If you'd rather trust nobody's relay, [host your own](#host-your-own).
 - **Anyone with the link can answer it first.** They still can't read anything, but they could send a fake answer. If that happens, the page says "This link doesn't work anymore" when you open it.
 - **Phishing.** A link can say anyone is asking. Only send secrets to agents you asked for help.
 - **An agent that wants to see a secret can.** enclave keeps secrets out of the chat and out of tool results, and `run` hides their exact values in output. But an agent with a shell on the same computer could still read its own vault. enclave stops secrets from leaking by accident, not a model that's trying.

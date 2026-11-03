@@ -4,9 +4,9 @@ The source of truth for words. The site, README, OG image and launch post draw f
 
 ## One line
 
-For npm, GitHub and `og:description`:
+For npm, GitHub, the MCP registry, the plugins and `og:description` (100 characters at most, for the registry):
 
-> Your agent sends a one-time link instead of asking for a password in chat. It's locked in your browser, and only your agent can open it.
+> Your agent asks for a password by one-time link, not in chat, and uses it without seeing it.
 
 ## Short version
 
@@ -18,6 +18,8 @@ For npm, GitHub and `og:description`:
 - **Sub line:** You type it and tap Send. Only your agent can open it.
 - **Visual:** the real page, "hex is asking for Netflix", in both themes.
 
+Below the command: "Works with Claude Code, Codex, Cursor, Gemini CLI and any MCP client. Nothing for the person to install, and their password manager can fill it in."
+
 Runner-up headline: "Passwords by link, not by chat." Shorter, but it reads like a slogan. The first one just says what happens.
 
 ## Sections
@@ -28,11 +30,11 @@ One headline, one line, one visual each. Let the visual explain.
 | --- | --- | --- | --- |
 | The page | One page, one button. | It says who's asking and for what. Your password manager can fill it. No app, no account. | The real page in ledger and field, side by side |
 | The link | Everything after the # stays on your device. | Browsers never send that part to a server. The key and the question live there, so the relay never learns what was asked. | The link below, with the `#` part highlighted |
-| The ledger | Who can read it, at each step. | You, until you tap Send. The relay holds 304 locked bytes for 24 hours at most. Only your agent has the key. | The ledger from the ledger theme |
-| Using it | Your agent uses it without seeing it. | `enclave run` puts it in a command and prints `[hidden KEY]` wherever it would show up. A 2FA setup key gives fresh 6-digit codes. | A terminal running `enclave run`, with the hidden output |
-| Setup | One line for most agents. | A skill for any agent with a shell, MCP for the rest, plus a Claude Code plugin and a Gemini CLI extension. | `npx skills add AVGVSTVS96/enclave` and the MCP line |
+| The ledger | Who can read it, at each step. | The highlight sits on whoever can read it. | The ledger from the ledger theme |
+| Using it | Your agent uses it without seeing it. | Each secret goes into a vault of its own, next to 2FA codes and passkeys, and you can bring in Proton Pass. | A terminal: ask, wait, `enclave run` with the hidden output, `enclave import proton`, `enclave passkey` |
+| Setup | One line for most agents. | Setup for every other client is in the README. | `npx skills add AVGVSTVS96/enclave` and the MCP line |
 | Security | What it can't protect against. | Whoever runs the relay serves the page. A link can claim anyone is asking. An agent set on reading its own vault can. | The CSP header from the live relay, and `hpke.ts` at 96 lines |
-| Host your own | Run your own relay. | It's a Convex app in 154 lines. Pick a theme and a color when you deploy. | `ENCLAVE_THEME=field ENCLAVE_COLOR=… npm run deploy` next to both themes |
+| Host your own | Run your own relay. | It's 154 lines of Convex, plus the page it serves. | `ENCLAVE_THEME=field ENCLAVE_COLOR=… npm run deploy` next to both themes |
 
 The link, for the anatomy visual (a real shape, made by `vault.ask`):
 
@@ -51,9 +53,9 @@ For the security section's body, in this order:
 - Answers are padded, so every login seals to the same 304 bytes. The relay can't tell how long your password is.
 - A link works once. It's deleted when the agent picks up the answer, or after 24 hours.
 - The page is one file with a strict Content Security Policy. It can only talk to the relay it came from.
-- Whoever runs the relay sends you the page, so they could change it. Every site that encrypts in your browser works this way. If you'd rather trust nobody's relay, run your own.
+- Whoever runs the relay sends you the page, so they could change it. To trust no one's relay, run your own.
 - Anyone with the link can answer first. They can't read anything, but they could send a fake answer. You'd see "This link doesn't work anymore."
-- enclave stops secrets from leaking into the chat by accident. It doesn't stop an agent that's trying to read its own vault.
+- An agent that wants to read its own vault can. enclave stops accidents, not an agent that's trying.
 
 ### Themes
 
@@ -77,6 +79,8 @@ The field track can only claim what the page knows. The page knows its upload we
 ## Voice
 
 The brief: "It's for everyone, so it has to be dead simple, grandma-level."
+
+- First ask whether a line should exist at all: cut what's already on screen, what nobody wondered about, and anything that defends a fix or a design choice.
 
 - On the page and the hero, say **locked**, not encrypted. The page already does ("It's locked on this device before it's sent"). Save HPKE and X25519 for the security section.
 - Say **relay**, not server or backend. Say **link**, not URL, except in the anatomy.
@@ -114,7 +118,7 @@ The brief: "It's for everyone, so it has to be dead simple, grandma-level."
 ## OG image
 
 - **Text:** the wordmark, then "Your agent needs a password. It sends a link." Nothing else; the page shot does the rest.
-- **Visual:** the real page, "hex is asking for Netflix" with Email, Password and "Send to hex".
+- **Visual:** the real page, whole: "hex is asking for Netflix" with Email, Password, "Send to hex", and the ledger under it.
 - **Alt:** "enclave: hex is asking for Netflix on a one-time page with email and password fields and a Send to hex button."
 
 ## README header
