@@ -1,10 +1,13 @@
-export function encode(bytes: Uint8Array) {
-  return btoa(String.fromCharCode(...bytes))
+const TRAILING_PADDING = /[=]+$/u;
+
+export const encode = (bytes: Uint8Array) =>
+  btoa(String.fromCodePoint(...bytes))
     .replaceAll("+", "-")
     .replaceAll("/", "_")
-    .replace(/=+$/, "")
-}
+    .replace(TRAILING_PADDING, "");
 
-export function decode(text: string) {
-  return Uint8Array.from(atob(text.replaceAll("-", "+").replaceAll("_", "/")), (char) => char.charCodeAt(0))
-}
+export const decode = (text: string) =>
+  Uint8Array.from(
+    atob(text.replaceAll("-", "+").replaceAll("_", "/")),
+    (char) => char.codePointAt(0) ?? 0,
+  );

@@ -1,14 +1,11 @@
 {
-  "semi": false,
-  "printWidth": 120,
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "sortImports": true,
   "ignorePatterns": [
     "convex/_generated/**",
     "convex/page.gen.ts",
     "dist/**",
-    "site/**",
     "brand/**",
-    "tools/oxlint/anti-slop/**",
-    "package-lock.json",
     "**/*.md",
     "**/*.html",
     "**/*.css"

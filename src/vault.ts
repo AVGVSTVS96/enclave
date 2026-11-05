@@ -1,357 +1,360 @@
-import { ConvexClient, ConvexHttpClient } from "convex/browser"
-import { makeFunctionReference } from "convex/server"
-import { randomUUID } from "node:crypto"
-import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises"
-import { homedir } from "node:os"
-import { join } from "node:path"
-import { openAnswer } from "./answer.ts"
-import { decode, encode } from "./base64url.ts"
-import { generateKeyPair } from "./hpke.ts"
-import { accepts, signAssertion, type SignRequest } from "./passkey.ts"
-import { protonVaults, readProton, toItem, toItems, type ProtonEntry } from "./proton.ts"
-import { runWithSecrets, type Stdio } from "./run.ts"
-import { Store, type Item } from "./store.ts"
-import { totp } from "./totp.ts"
-import * as z from "zod"
+import { randomUUID } from "node:crypto";
+import { mkdir, readdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import path from "node:path";
+
+import { ConvexClient, ConvexHttpClient } from "convex/browser";
+import { makeFunctionReference } from "convex/server";
+import * as z from "zod";
+
+import { openAnswerJson } from "./answer.ts";
+import { decode, encode } from "./base64url.ts";
+import { generateKeyPair } from "./hpke.ts";
+import { accepts, signAssertion } from "./passkey.ts";
+import type { SignRequest } from "./passkey.ts";
+import { importFromProton } from "./proton-import.ts";
+import { passkeySchema } from "./proton.ts";
+import { runWithSecrets } from "./run.ts";
+import type { Stdio } from "./run.ts";
+import { itemSchema, Store } from "./store.ts";
+import type { Item } from "./store.ts";
+import { totp } from "./totp.ts";
 
 export interface VaultOptions {
-  from?: string
-  home?: string
-  relay?: string
-  store?: ItemStore
+  from?: string | undefined;
+  home?: string;
+  relay?: string;
+  store?: ItemStore;
 }
 
-export type ItemStore = Pick<Store, "get" | "put" | "remove" | "names">
+export type ItemStore = Pick<Store, "get" | "put" | "remove" | "names">;
 
 export interface Request {
-  url: string
-  wait(): Promise<string[]>
+  url: string;
+  wait: () => Promise<string[]>;
 }
 
-interface Pending {
-  relay: string
-  token: string
-  privateKey: string
-  fields: string[]
-}
+const pendingSchema = z.object({
+  relay: z.string(),
+  token: z.string(),
+  privateKey: z.string(),
+  fields: z.array(z.string()),
+});
 
-const hostedRelay = "https://moonlit-lynx-37.convex.cloud"
+type Pending = z.infer<typeof pendingSchema>;
+
+const armSchema = z.object({ name: z.string().min(1), field: z.string(), until: z.number() });
+
+const hostedRelay = "https://moonlit-lynx-37.convex.cloud";
+const SITE_FIELD = /^(?:urls?|website|original login uri)(?: \d+)?$/u;
+const WHITESPACE = /\s+/u;
+const SECRET_KIND = /^(?<kind>totp|passkey)(?: \d+)?$/u;
+const OWNER_ONLY_DIR = 0o700;
+const OWNER_ONLY_FILE = 0o600;
+const ARMED_FOR_MS = 300_000;
 
 const requests = {
   open: makeFunctionReference<"mutation", { token: string }, string>("requests:open"),
-  watch: makeFunctionReference<"query", { token: string }, { answer: ArrayBuffer | null } | null>("requests:watch"),
+  watch: makeFunctionReference<"query", { token: string }, { answer: ArrayBuffer | null } | null>(
+    "requests:watch",
+  ),
   close: makeFunctionReference<"mutation", { token: string }, null>("requests:close"),
-}
+};
 
-export function openVault({
+const sites = (item: Item) =>
+  Object.entries(item)
+    .filter(([field]) => SITE_FIELD.test(field))
+    .flatMap(([, value]) => value.toLowerCase().split(WHITESPACE));
+
+const readJson = async <T>(file: string, schema: z.ZodType<T>): Promise<T | undefined> => {
+  try {
+    const json = await readFile(file, "utf-8");
+
+    return schema.safeParse(JSON.parse(json)).data;
+  } catch {
+    return undefined;
+  }
+};
+
+const writeAtomically = async (file: string, json: string) => {
+  const temporary = `${file}.${randomUUID()}`;
+
+  await writeFile(temporary, json, { mode: OWNER_ONLY_FILE });
+  await rename(temporary, file);
+};
+
+const claim = async (file: string) => {
+  try {
+    await rename(file, `${file}.used`);
+    await rm(`${file}.used`, { force: true });
+
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+const watchForAnswer = async (client: ConvexClient, token: string, signal?: AbortSignal) => {
+  const { promise, resolve, reject } = Promise.withResolvers<ArrayBuffer | null>();
+
+  signal?.throwIfAborted();
+  signal?.addEventListener("abort", () => {
+    reject(signal.reason);
+  });
+  client.onUpdate(
+    requests.watch,
+    { token },
+    (request) => {
+      if (!request) {
+        resolve(null);
+      } else if (request.answer) {
+        resolve(request.answer);
+      }
+    },
+    reject,
+  );
+
+  return await promise;
+};
+
+export const openVault = ({
   from = process.env.ENCLAVE_FROM,
-  home = process.env.ENCLAVE_HOME ?? join(homedir(), ".enclave"),
+  home = process.env.ENCLAVE_HOME ?? path.join(homedir(), ".enclave"),
   relay = process.env.ENCLAVE_RELAY ?? hostedRelay,
   store = new Store(home),
-}: VaultOptions = {}) {
-  const pendingPath = (name: string) => join(home, "pending", `${encodeURIComponent(name)}.json`)
+}: VaultOptions = {}) => {
+  const pendingPath = (name: string) =>
+    path.join(home, "pending", `${encodeURIComponent(name)}.json`);
 
-  async function readPending(name: string): Promise<Pending | undefined> {
-    const json = await readFile(pendingPath(name), "utf8").catch(() => undefined)
+  const readPending = async (name: string) => await readJson(pendingPath(name), pendingSchema);
+  const armed = path.join(home, "armed");
 
-    return json ? JSON.parse(json) : undefined
-  }
+  const armFiles = async () => {
+    const files = await readdir(armed).catch(() => []);
 
-  async function ask(name: string, fields = ["password"]): Promise<Request> {
-    if (!fields.length || fields.some((field) => !field.trim()) || new Set(fields).size < fields.length)
-      throw new Error("ask for at least one field, each with its own name")
-    const token = encode(crypto.getRandomValues(new Uint8Array(32)))
-    const { publicKey, privateKey } = await generateKeyPair()
-    const url = await new ConvexHttpClient(relay, { logger: false }).mutation(requests.open, { token })
+    return files.filter((file) => file.endsWith(".json")).map((file) => path.join(armed, file));
+  };
 
-    const previous = await readPending(name)
+  const waitFor = async (name: string, pending: Pending, signal?: AbortSignal) => {
+    const client = new ConvexClient(pending.relay, { logger: false });
 
-    if (previous)
+    const forget = async () => {
+      const current = await readPending(name);
+
+      if (current?.token === pending.token) {
+        await rm(pendingPath(name), { force: true });
+      }
+
+      return current !== undefined && current.token !== pending.token;
+    };
+
+    try {
+      const sealed = await watchForAnswer(client, pending.token, signal);
+
+      if (!sealed) {
+        const replaced = await forget();
+
+        throw new Error(
+          replaced ? `a newer link for ${name} replaced this one` : `the link for ${name} expired`,
+        );
+      }
+
+      const json = await openAnswerJson(decode(pending.privateKey), name, new Uint8Array(sealed));
+      const answer = itemSchema.safeParse(JSON.parse(json)).data;
+
+      if (!answer || !pending.fields.every((field) => field in answer)) {
+        throw new Error(`the answer for ${name} is incomplete`);
+      }
+
+      const update = Object.fromEntries(
+        pending.fields.map((field) => [field, answer[field] ?? ""]),
+      );
+
+      await store.put(name, { ...(await store.get(name)), ...update });
+      await client.mutation(requests.close, { token: pending.token }).catch(() => null);
+      await forget();
+
+      return pending.fields;
+    } finally {
+      await client.close();
+    }
+  };
+
+  const ask = async (name: string, fields = ["password"]): Promise<Request> => {
+    if (
+      fields.length === 0 ||
+      fields.some((field) => field.trim() === "") ||
+      new Set(fields).size < fields.length
+    ) {
+      throw new Error("ask for at least one field, each with its own name");
+    }
+
+    const token = encode(crypto.getRandomValues(new Uint8Array(32)));
+    const { publicKey, privateKey } = await generateKeyPair();
+
+    const url = await new ConvexHttpClient(relay, { logger: false }).mutation(requests.open, {
+      token,
+    });
+
+    const previous = await readPending(name);
+
+    if (previous) {
       await new ConvexHttpClient(previous.relay, { logger: false })
         .mutation(requests.close, { token: previous.token })
-        .catch(() => undefined)
-    const pending = { relay, token, privateKey: encode(privateKey), fields }
-    await mkdir(join(home, "pending"), { recursive: true, mode: 0o700 })
-    const temporary = `${pendingPath(name)}.${randomUUID()}`
-    await writeFile(temporary, JSON.stringify(pending), { mode: 0o600 })
-    await rename(temporary, pendingPath(name))
+        .catch(() => null);
+    }
+
+    const pending = { relay, token, privateKey: encode(privateKey), fields };
+
+    await mkdir(path.join(home, "pending"), { recursive: true, mode: OWNER_ONLY_DIR });
+    await writeAtomically(pendingPath(name), JSON.stringify(pending));
 
     const fragment = new URLSearchParams([
-      ...(from ? [["from", from]] : []),
+      ...(from !== undefined && from !== "" ? [["from", from]] : []),
       ["name", name],
       ...fields.map((field) => ["field", field]),
       ["key", encode(publicKey)],
-    ])
+    ]);
 
-    return { url: `${url}#${fragment}`, wait: () => waitFor(name, pending) }
-  }
+    return { url: `${url}#${fragment}`, wait: async () => await waitFor(name, pending) };
+  };
 
-  async function wait(name: string, signal?: AbortSignal) {
-    const pending = await readPending(name)
+  const wait = async (name: string, signal?: AbortSignal) => {
+    const pending = await readPending(name);
 
-    if (!pending) throw new Error(`nothing asked for ${name}`)
-
-    return waitFor(name, pending, signal)
-  }
-
-  async function waitFor(name: string, pending: Pending, signal?: AbortSignal) {
-    const client = new ConvexClient(pending.relay, { logger: false })
-
-    const forget = async () => {
-      const current = await readPending(name)
-
-      if (current?.token === pending.token) await rm(pendingPath(name), { force: true })
-
-      return current && current.token !== pending.token
+    if (!pending) {
+      throw new Error(`nothing asked for ${name}`);
     }
 
-    try {
-      const sealed = await new Promise<ArrayBuffer | null>((resolve, reject) => {
-        signal?.throwIfAborted()
-        signal?.addEventListener("abort", () => reject(signal.reason))
-        client.onUpdate(
-          requests.watch,
-          { token: pending.token },
-          (request) => {
-            if (!request) resolve(null)
-            else if (request.answer) resolve(request.answer)
-          },
-          reject,
-        )
-      })
+    return await waitFor(name, pending, signal);
+  };
 
-      if (!sealed)
-        throw new Error(
-          (await forget()) ? `a newer link for ${name} replaced this one` : `the link for ${name} expired`,
-        )
+  const read = async (name: string, field: string) => {
+    const item = await store.get(name);
+    const value = item?.[field];
 
-      const answer = z
-        .record(z.string(), z.string())
-        .safeParse(await openAnswer(decode(pending.privateKey), name, new Uint8Array(sealed))).data
-
-      if (!answer || !pending.fields.every((field) => field in answer))
-        throw new Error(`the answer for ${name} is incomplete`)
-      const update = Object.fromEntries(pending.fields.map((field) => [field, answer[field]!]))
-      await store.put(name, { ...(await store.get(name)), ...update })
-      await client.mutation(requests.close, { token: pending.token }).catch(() => undefined)
-      await forget()
-
-      return pending.fields
-    } finally {
-      await client.close()
+    if (value === undefined) {
+      throw new Error(`no ${field} saved for ${name}`);
     }
-  }
 
-  async function read(name: string, field: string) {
-    const value = (await store.get(name))?.[field]
+    return value;
+  };
 
-    if (value === undefined) throw new Error(`no ${field} saved for ${name}`)
+  const get = async (name: string, field: string) => {
+    const kind = SECRET_KIND.exec(field)?.groups?.kind;
 
-    return value
-  }
+    if (kind === "passkey") {
+      throw new Error(
+        `${name}'s ${field} stays in the vault: sign in with it through \`enclave passkey\``,
+      );
+    }
 
-  async function get(name: string, field: string) {
-    const kind = field.match(/^(totp|passkey)( \d+)?$/)?.[1]
+    const value = await read(name, field);
 
-    if (kind === "passkey")
-      throw new Error(`${name}'s ${field} stays in the vault: sign in with it through \`enclave passkey\``)
-    const value = await read(name, field)
+    return kind === "totp" ? await totp(value) : value;
+  };
 
-    return kind === "totp" ? totp(value) : value
-  }
-
-  async function list(search?: string) {
-    const term = search?.toLowerCase()
+  const list = async (search?: string) => {
+    const term = search?.toLowerCase();
+    const names = await store.names();
 
     const items = await Promise.all(
-      (await store.names()).map(async (name) => ({ name, item: (await store.get(name)) ?? {} })),
-    )
+      names.map(async (name) => ({ name, item: (await store.get(name)) ?? {} })),
+    );
 
     return items
       .filter(
         ({ name, item }) =>
-          !term || name.toLowerCase().includes(term) || sites(item).some((site) => site.includes(term)),
+          term === undefined ||
+          term === "" ||
+          name.toLowerCase().includes(term) ||
+          sites(item).some((site) => site.includes(term)),
       )
-      .map(({ name, item }) => ({ name, fields: Object.keys(item) }))
-  }
+      .map(({ name, item }) => ({ name, fields: Object.keys(item) }));
+  };
 
-  async function importProton(vaults: string[] = []) {
-    const manifest = join(home, "proton.json")
-    const saved = await readFile(manifest, "utf8").catch(() => undefined)
-    const before: Record<string, ProtonImport> = saved ? JSON.parse(saved) : {}
-    const lastSeen = new Store(home, "proton")
-    const read = vaults.length ? vaults : await protonVaults()
-    const entries = (await Promise.all(read.map(readProton))).flat()
+  const importProton = async (vaults: string[] = []) =>
+    await importFromProton({ home, store, vaults });
 
-    const protonNames = new Set(Object.values(before).map(({ name }) => name))
+  const passkey = async (name: string, field = "passkey", timeout = ARMED_FOR_MS) => {
+    await read(name, field);
+    await mkdir(armed, { recursive: true, mode: OWNER_ONLY_DIR });
 
-    const taken = new Map<string, Item | true>(
-      saved ? (await store.names()).filter((name) => !protonNames.has(name)).map((name) => [name, true]) : [],
-    )
+    for (const file of await armFiles()) {
+      const arm = await readJson(file, armSchema);
 
-    for (const { name, vault } of Object.values(before)) if (!read.includes(vault)) taken.set(name, true)
-
-    const after: typeof before = {}
-    const fresh: ProtonEntry[] = []
-
-    for (const entry of entries) {
-      const name = before[entry.id]?.name
-      const title = entry.content.title.trim() || "Untitled"
-
-      if (
-        name &&
-        (name === title || name.startsWith(`${title} (`)) &&
-        !taken.has(name) &&
-        Object.keys(toItem(entry.content)).length
-      ) {
-        after[entry.id] = { name, vault: entry.vault }
-        taken.set(name, true)
-      } else fresh.push(entry)
+      if (arm?.name === name && arm.field === field) {
+        await rm(file, { force: true });
+      }
     }
 
-    const byContent = new Map(fresh.map((entry) => [entry.content, entry]))
+    await writeFile(
+      path.join(armed, `${randomUUID()}.json`),
+      JSON.stringify({ name, field, until: Date.now() + timeout }),
+      { mode: OWNER_ONLY_FILE },
+    );
+  };
 
-    for (const [name, , content] of toItems(
-      fresh.map((entry) => entry.content),
-      taken,
-    ))
-      after[byContent.get(content)!.id] = { name, vault: byContent.get(content)!.vault }
+  const sign = async (request: SignRequest) => {
+    for (const file of await armFiles()) {
+      const arm = await readJson(file, armSchema);
 
-    const imported = new Map<string, Item>()
-    const sent = new Map<string, [string, Item]>()
-
-    for (const entry of entries) {
-      const target = after[entry.id]
-
-      if (!target) continue
-      const item = toItem(entry.content)
-      const previous = before[entry.id]
-      const existing = (await store.get(previous?.name ?? target.name)) ?? {}
-      const proton = new Set(previous ? previous.fields : saved ? Object.keys(existing) : [])
-      const added = Object.entries(existing).filter(([field]) => !proton.has(field) && !(field in item))
-      const seen = (await lastSeen.get(entry.id)) ?? {}
-
-      const changedHere = Object.entries(existing).filter(
-        ([field, value]) => field in seen && value !== seen[field] && item[field] === seen[field],
-      )
-
-      imported.set(target.name, { ...Object.fromEntries(added), ...item, ...Object.fromEntries(changedHere) })
-      target.fields = Object.keys(item)
-      sent.set(target.name, [entry.id, item])
-    }
-
-    for (const [name, item] of imported) {
-      await store.put(name, item)
-      await lastSeen.put(...sent.get(name)!)
-    }
-
-    const removed = Object.values(before)
-      .filter(({ name, vault }) => read.includes(vault) && !imported.has(name))
-      .map(({ name }) => name)
-
-    for (const name of removed) await store.remove(name)
-
-    for (const [id, { vault }] of Object.entries(before))
-      if (read.includes(vault) && !after[id]) await lastSeen.remove(id)
-    const kept = Object.fromEntries(Object.entries(before).filter(([, { vault }]) => !read.includes(vault)))
-    const temporary = `${manifest}.${randomUUID()}`
-    await writeFile(temporary, JSON.stringify({ ...kept, ...after }), { mode: 0o600 })
-    await rename(temporary, manifest)
-
-    return { items: [...imported].map(([name, item]) => ({ name, fields: Object.keys(item) })), removed }
-  }
-
-  const armed = join(home, "armed")
-
-  async function passkey(name: string, field = "passkey", timeout = 300_000) {
-    await read(name, field)
-    await mkdir(armed, { recursive: true, mode: 0o700 })
-
-    for (const file of (await readdir(armed)).filter((file) => file.endsWith(".json"))) {
-      const arm = JSON.parse(await readFile(join(armed, file), "utf8").catch(() => "{}"))
-
-      if (arm.name === name && arm.field === field) await rm(join(armed, file), { force: true })
-    }
-
-    await writeFile(join(armed, `${randomUUID()}.json`), JSON.stringify({ name, field, until: Date.now() + timeout }), {
-      mode: 0o600,
-    })
-  }
-
-  async function sign(request: SignRequest) {
-    for (const file of (await readdir(armed).catch(() => [])).filter((file) => file.endsWith(".json"))) {
-      const path = join(armed, file)
-      const arm = JSON.parse(await readFile(path, "utf8").catch(() => "{}"))
-
-      if (!arm.name) continue
+      if (!arm) {
+        continue;
+      }
 
       if (arm.until < Date.now()) {
-        await rm(path, { force: true })
-        continue
+        await rm(file, { force: true });
+        continue;
       }
 
-      const saved = (await store.get(arm.name))?.[arm.field]
+      const item = await store.get(arm.name);
+      const saved = item?.[arm.field];
 
-      if (!saved) {
-        await rm(path, { force: true })
-        continue
+      if (saved === undefined || saved === "") {
+        await rm(file, { force: true });
+        continue;
       }
 
-      const key = JSON.parse(saved)
+      const key = passkeySchema.parse(JSON.parse(saved));
 
-      if (!accepts(key, request)) continue
-
-      const claimed = await rename(path, `${path}.used`).then(
-        () => true,
-        () => false,
-      )
-
-      if (!claimed) continue
-      await rm(`${path}.used`, { force: true })
-
-      return signAssertion(key, request)
+      if (accepts(key, request) && (await claim(file))) {
+        return signAssertion(key, request);
+      }
     }
 
-    throw new Error(`no passkey is ready for ${request.rpId ?? new URL(request.origin).hostname}`)
-  }
+    throw new Error(`no passkey is ready for ${request.rpId ?? new URL(request.origin).hostname}`);
+  };
 
-  async function save(name: string, field: string, value: string) {
-    await store.put(name, { ...(await store.get(name)), [field]: value })
-  }
+  const save = async (name: string, field: string, value: string) => {
+    await store.put(name, { ...(await store.get(name)), [field]: value });
+  };
 
-  async function remove(name: string) {
-    await store.remove(name)
-  }
+  const remove = async (name: string) => {
+    await store.remove(name);
+  };
 
-  async function run(command: string[], secrets: Record<string, string>, stdio?: Stdio) {
+  const run = async (command: string[], secrets: Record<string, string>, stdio?: Stdio) => {
     const values = await Promise.all(
       Object.entries(secrets).map(async ([variable, reference]) => {
-        const slash = reference.lastIndexOf("/")
+        const slash = reference.lastIndexOf("/");
 
-        if (slash < 1) throw new Error(`${variable}=${reference} should look like ${variable}=<name>/<field>`)
+        if (slash < 1) {
+          throw new Error(`${variable}=${reference} should look like ${variable}=<name>/<field>`);
+        }
 
-        return [variable, await get(reference.slice(0, slash), reference.slice(slash + 1))]
+        const value = await get(reference.slice(0, slash), reference.slice(slash + 1));
+
+        return [variable, value] as const;
       }),
-    )
+    );
 
-    return runWithSecrets(command, Object.fromEntries(values), stdio)
-  }
+    return await runWithSecrets(command, Object.fromEntries(values), stdio);
+  };
 
-  return { ask, wait, get, save, list, remove, run, importProton, passkey, sign }
-}
+  return { ask, wait, get, save, list, remove, run, importProton, passkey, sign };
+};
 
-export type Vault = ReturnType<typeof openVault>
+export type Vault = ReturnType<typeof openVault>;
 
-interface ProtonImport {
-  name: string
-  vault: string
-  fields?: string[]
-}
-
-export const vault = openVault()
-
-function sites(item: Item) {
-  return Object.entries(item)
-    .filter(([field]) => /^(urls?|website|original login uri)( \d+)?$/.test(field))
-    .flatMap(([, value]) => value.toLowerCase().split(/\s+/))
-}
+export const vault = openVault();

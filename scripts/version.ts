@@ -1,12 +1,23 @@
-import { execFileSync } from "node:child_process"
-import { readFileSync, writeFileSync } from "node:fs"
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 
-const versioned = [".claude-plugin/plugin.json", "gemini-extension.json", "server.json", "extension/manifest.json"]
+import * as z from "zod";
 
-const { version } = JSON.parse(readFileSync("package.json", "utf8"))
+const versioned = [
+  ".claude-plugin/plugin.json",
+  "gemini-extension.json",
+  "server.json",
+  "extension/manifest.json",
+];
+
+const VERSION_FIELD = /(?<key>"version": )"[^"]*"/gu;
+
+const { version } = z
+  .object({ version: z.string() })
+  .parse(JSON.parse(readFileSync("package.json", "utf-8")));
 
 for (const file of versioned) {
-  writeFileSync(file, readFileSync(file, "utf8").replaceAll(/("version": )"[^"]*"/g, `$1"${version}"`))
+  writeFileSync(file, readFileSync(file, "utf-8").replaceAll(VERSION_FIELD, `$<key>"${version}"`));
 }
 
-execFileSync("git", ["add", ...versioned])
+execFileSync("git", ["add", ...versioned]);

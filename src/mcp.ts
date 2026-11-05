@@ -1,18 +1,39 @@
-import { randomUUID } from "node:crypto"
-import { PassThrough } from "node:stream"
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
-import * as z from "zod"
-import packageJson from "../package.json" with { type: "json" }
-import type { Vault } from "./vault.ts"
+import { randomUUID } from "node:crypto";
+import { PassThrough } from "node:stream";
 
-const instructions = `When you need a password, API key or other secret from the person, ask for it with request_secret rather than in chat, so it stays out of the conversation. wait_for_secret saves it, run_with_secrets uses it without showing you its value, and sign_in_with_passkey signs in with a saved passkey.`
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import * as z from "zod";
 
-const reply = (text: string) => ({ content: [{ type: "text" as const, text }] })
+import packageJson from "../package.json" with { type: "json" };
+import type { Vault } from "./vault.ts";
 
-export async function serve(vault: Vault) {
-  const server = new McpServer({ name: "enclave", version: packageJson.version }, { instructions })
-  const elicitations = new Map<string, string>()
+const instructions = `When you need a password, API key or other secret from the person, ask for it with request_secret rather than in chat, so it stays out of the conversation. wait_for_secret saves it, run_with_secrets uses it without showing you its value, and sign_in_with_passkey signs in with a saved passkey.`;
+
+const waitPatiently = async (
+  vault: Vault,
+  name: string,
+  signal: AbortSignal,
+  patience: AbortSignal,
+): Promise<string[] | undefined> => {
+  let fields: string[] | undefined;
+
+  try {
+    fields = await vault.wait(name, signal);
+  } catch (error) {
+    if (!patience.aborted) {
+      throw error;
+    }
+  }
+
+  return fields;
+};
+
+const reply = (text: string) => ({ content: [{ type: "text" as const, text }] });
+
+export const serve = async (vault: Vault) => {
+  const server = new McpServer({ name: "enclave", version: packageJson.version }, { instructions });
+  const elicitations = new Map<string, string>();
 
   server.registerTool(
     "request_secret",
@@ -23,7 +44,9 @@ export async function serve(vault: Vault) {
       inputSchema: {
         name: z
           .string()
-          .describe('What the secret is for. The person sees it as the title, like "Netflix" or "OpenAI API key"'),
+          .describe(
+            'What the secret is for. The person sees it as the title, like "Netflix" or "OpenAI API key"',
+          ),
         fields: z
           .array(z.string())
           .optional()
@@ -34,25 +57,33 @@ export async function serve(vault: Vault) {
       annotations: { openWorldHint: true },
     },
     async ({ name, fields }) => {
-      const { url } = await vault.ask(name, fields)
+      const { url } = await vault.ask(name, fields);
 
       if (server.server.getClientCapabilities()?.elicitation?.url) {
-        const elicitationId = randomUUID()
-        const message = `Open this link to enter ${name}. It's locked on this device before it's sent.`
-        const { action } = await server.server.elicitInput({ mode: "url", elicitationId, url, message })
+        const elicitationId = randomUUID();
+        const message = `Open this link to enter ${name}. It's locked on this device before it's sent.`;
+
+        const { action } = await server.server.elicitInput({
+          mode: "url",
+          elicitationId,
+          url,
+          message,
+        });
 
         if (action === "accept") {
-          elicitations.set(name, elicitationId)
+          elicitations.set(name, elicitationId);
 
-          return reply(`The person has a private link for ${name}. Call wait_for_secret with name "${name}".`)
+          return reply(
+            `The person has a private link for ${name}. Call wait_for_secret with name "${name}".`,
+          );
         }
       }
 
       return reply(
         `Send the person this link exactly as it is: ${url}\nIt works once, for 24 hours. Then call wait_for_secret with name "${name}".`,
-      )
+      );
     },
-  )
+  );
 
   server.registerTool(
     "wait_for_secret",
@@ -63,23 +94,32 @@ export async function serve(vault: Vault) {
       inputSchema: { name: z.string().describe("The name given to request_secret") },
     },
     async ({ name }, { signal }) => {
-      const patience = AbortSignal.timeout(25 * 60_000)
+      const patience = AbortSignal.timeout(25 * 60_000);
 
-      const fields = await vault.wait(name, AbortSignal.any([signal, patience])).catch((error) => {
-        if (patience.aborted) return undefined
-        throw error
-      })
+      const fields = await waitPatiently(
+        vault,
+        name,
+        AbortSignal.any([signal, patience]),
+        patience,
+      );
 
-      if (!fields)
-        return reply(`${name} isn't filled in yet. The link stays open; call wait_for_secret again to keep waiting.`)
-      const elicitationId = elicitations.get(name)
+      if (!fields) {
+        return reply(
+          `${name} isn't filled in yet. The link stays open; call wait_for_secret again to keep waiting.`,
+        );
+      }
 
-      if (elicitationId) await server.server.createElicitationCompletionNotifier(elicitationId)()
-      elicitations.delete(name)
+      const elicitationId = elicitations.get(name);
 
-      return reply(`Saved ${name}: ${fields.join(", ")}. Use it with run_with_secrets.`)
+      if (elicitationId !== undefined) {
+        await server.server.createElicitationCompletionNotifier(elicitationId)();
+      }
+
+      elicitations.delete(name);
+
+      return reply(`Saved ${name}: ${fields.join(", ")}. Use it with run_with_secrets.`);
     },
-  )
+  );
 
   server.registerTool(
     "run_with_secrets",
@@ -96,18 +136,28 @@ export async function serve(vault: Vault) {
           ),
         secrets: z
           .record(z.string(), z.string())
-          .describe('Environment variables to set, each from "<name>/<field>", like {"STRIPE_KEY": "Stripe/key"}'),
+          .describe(
+            'Environment variables to set, each from "<name>/<field>", like {"STRIPE_KEY": "Stripe/key"}',
+          ),
       },
       annotations: { destructiveHint: true, openWorldHint: true },
     },
     async ({ command, secrets }) => {
-      const output: string[] = []
-      const collect = new PassThrough().on("data", (chunk) => output.push(String(chunk)))
-      const code = await vault.run(command, secrets, { stdin: "ignore", stdout: collect, stderr: collect })
+      const output: string[] = [];
 
-      return reply([output.join("").trimEnd(), `[exit code ${code}]`].filter(Boolean).join("\n"))
+      const collect = new PassThrough().on("data", (chunk: Buffer) => {
+        output.push(String(chunk));
+      });
+
+      const code = await vault.run(command, secrets, {
+        stdin: "ignore",
+        stdout: collect,
+        stderr: collect,
+      });
+
+      return reply([output.join("").trimEnd(), `[exit code ${code}]`].filter(Boolean).join("\n"));
     },
-  )
+  );
 
   server.registerTool(
     "sign_in_with_passkey",
@@ -122,11 +172,13 @@ export async function serve(vault: Vault) {
       annotations: { openWorldHint: true },
     },
     async ({ name, field }) => {
-      await vault.passkey(name, field)
+      await vault.passkey(name, field);
 
-      return reply(`${name}'s passkey is ready for 5 minutes. Click the site's passkey sign-in now.`)
+      return reply(
+        `${name}'s passkey is ready for 5 minutes. Click the site's passkey sign-in now.`,
+      );
     },
-  )
+  );
 
   server.registerTool(
     "list_secrets",
@@ -134,21 +186,25 @@ export async function serve(vault: Vault) {
       title: "List saved secrets",
       description:
         "List what's saved in the vault: names and their fields, not their values. Check here before asking the person for something.",
-      inputSchema: { search: z.string().optional().describe('A name or website to match, like "github"') },
+      inputSchema: {
+        search: z.string().optional().describe('A name or website to match, like "github"'),
+      },
       annotations: { readOnlyHint: true },
     },
     async ({ search }) => {
-      const items = await vault.list(search)
+      const items = await vault.list(search);
+
+      if (items.length > 0) {
+        return reply(items.map((item) => `${item.name}: ${item.fields.join(", ")}`).join("\n"));
+      }
 
       return reply(
-        items.length
-          ? items.map((item) => `${item.name}: ${item.fields.join(", ")}`).join("\n")
-          : search
-            ? `Nothing saved matches ${search}.`
-            : "The vault is empty.",
-      )
+        search === undefined || search === ""
+          ? "The vault is empty."
+          : `Nothing saved matches ${search}.`,
+      );
     },
-  )
+  );
 
-  await server.connect(new StdioServerTransport())
-}
+  await server.connect(new StdioServerTransport());
+};

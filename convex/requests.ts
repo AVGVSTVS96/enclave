@@ -1,90 +1,100 @@
-import { HOUR, MINUTE, RateLimiter } from "@convex-dev/rate-limiter"
-import { v } from "convex/values"
-import { encode } from "../src/base64url.ts"
-import { components, internal } from "./_generated/api"
-import { internalMutation, internalQuery, mutation, query, type QueryCtx } from "./_generated/server"
+import { HOUR, MINUTE, RateLimiter } from "@convex-dev/rate-limiter";
+import { v } from "convex/values";
 
-const lifetime = 24 * HOUR
+import { encode } from "../src/base64url.ts";
+import { components, internal } from "./_generated/api";
+import { internalMutation, internalQuery, mutation, query } from "./_generated/server";
+import type { QueryCtx } from "./_generated/server";
+
+const lifetime = 24 * HOUR;
 
 const rateLimiter = new RateLimiter(components.rateLimiter, {
   open: { kind: "token bucket", rate: 60, period: MINUTE },
-})
+});
+
+const same = (a: ArrayBuffer, b: ArrayBuffer) => {
+  const [x, y] = [new Uint8Array(a), new Uint8Array(b)];
+
+  return x.length === y.length && x.every((byte, index) => byte === y[index]);
+};
+
+const find = async (ctx: QueryCtx, slug: string) =>
+  await ctx.db
+    .query("requests")
+    .withIndex("slug", (q) => q.eq("slug", slug))
+    .unique();
+
+const slugOf = async (token: string) => {
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
+
+  return encode(new Uint8Array(hash, 0, 16));
+};
 
 export const open = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
-    await rateLimiter.limit(ctx, "open", { throws: true })
-    const slug = await slugOf(token)
-    const request = await ctx.db.insert("requests", { slug })
-    await ctx.scheduler.runAfter(lifetime, internal.requests.expire, { request })
+    await rateLimiter.limit(ctx, "open", { throws: true });
+    const slug = await slugOf(token);
+    const request = await ctx.db.insert("requests", { slug });
+    await ctx.scheduler.runAfter(lifetime, internal.requests.expire, { request });
 
-    return `${process.env.CONVEX_SITE_URL}/${slug}`
+    return `${process.env.CONVEX_SITE_URL}/${slug}`;
   },
-})
+});
 
 export const watch = query({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
-    const request = await find(ctx, await slugOf(token))
+    const request = await find(ctx, await slugOf(token));
 
-    return request && { answer: request.answer ?? null }
+    return request && { answer: request.answer ?? null };
   },
-})
+});
 
 export const close = mutation({
   args: { token: v.string() },
   handler: async (ctx, { token }) => {
-    const request = await find(ctx, await slugOf(token))
+    const request = await find(ctx, await slugOf(token));
 
-    if (request) await ctx.db.delete("requests", request._id)
+    if (request) {
+      await ctx.db.delete("requests", request._id);
+    }
   },
-})
+});
 
 export const isOpen = internalQuery({
   args: { slug: v.string() },
   handler: async (ctx, { slug }) => {
-    const request = await find(ctx, slug)
+    const request = await find(ctx, slug);
 
-    return request !== null && request.answer === undefined
+    return request !== null && request.answer === undefined;
   },
-})
+});
 
 export const fill = internalMutation({
   args: { slug: v.string(), answer: v.bytes() },
   handler: async (ctx, { slug, answer }) => {
-    const request = await find(ctx, slug)
+    const request = await find(ctx, slug);
 
-    if (!request) return false
+    if (!request) {
+      return false;
+    }
 
-    if (request.answer) return same(request.answer, answer)
-    await ctx.db.patch("requests", request._id, { answer })
+    if (request.answer) {
+      return same(request.answer, answer);
+    }
 
-    return true
+    await ctx.db.patch("requests", request._id, { answer });
+
+    return true;
   },
-})
+});
 
 export const expire = internalMutation({
   args: { request: v.id("requests") },
   handler: async (ctx, { request }) => {
-    if (await ctx.db.get("requests", request)) await ctx.db.delete("requests", request)
+    if (await ctx.db.get("requests", request)) {
+      await ctx.db.delete("requests", request);
+    }
   },
-})
-
-function same(a: ArrayBuffer, b: ArrayBuffer) {
-  const [x, y] = [new Uint8Array(a), new Uint8Array(b)]
-
-  return x.length === y.length && x.every((byte, index) => byte === y[index])
-}
-
-function find(ctx: QueryCtx, slug: string) {
-  return ctx.db
-    .query("requests")
-    .withIndex("slug", (q) => q.eq("slug", slug))
-    .unique()
-}
-
-async function slugOf(token: string) {
-  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token))
-
-  return encode(new Uint8Array(hash, 0, 16))
-}
+});

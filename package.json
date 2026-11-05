@@ -6,6 +6,15 @@
   "bin": {
     "enclave": "dist/enclave.js"
   },
+  "workspaces": {
+    "packages": [
+      "site",
+      "brand"
+    ],
+    "catalog": {
+      "typescript": "7.0.2"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -21,26 +30,32 @@
     "dev": "node scripts/page.ts && convex dev",
     "deploy": "node scripts/page.ts && convex deploy",
     "build": "node scripts/build.ts",
-    "prepack": "npm run build",
-    "check": "node scripts/page.ts && tsc -p . && oxlint && oxfmt --check && node --test 'test/*.test.ts'",
-    "format": "oxfmt && oxlint --fix",
+    "prepack": "node scripts/build.ts",
+    "check": "node scripts/page.ts && oxlint && oxfmt --check && tsc -p . && bun --filter enclave-site typecheck && node --test \"test/*.test.ts\"",
+    "fix": "oxlint --fix; oxfmt",
+    "prepare": "lefthook install",
     "version": "node scripts/version.ts"
   },
   "devDependencies": {
-    "@convex-dev/rate-limiter": "^0.4.1",
-    "@modelcontextprotocol/sdk": "^1.32.1",
-    "@msgpack/msgpack": "^3.1.3",
-    "@oxlint/plugins": "^1.90.0",
-    "@types/node": "^24.0.0",
-    "convex": "^1.46.0",
-    "esbuild": "0.27.0",
-    "oxfmt": "^0.75.0",
-    "oxlint": "^1.90.0",
-    "typescript": "^7.0.2",
-    "zod": "^4.6.5"
+    "@convex-dev/rate-limiter": "0.4.3",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "@msgpack/msgpack": "3.1.3",
+    "@oxlint/plugins": "1.91.0",
+    "@types/chrome": "0.3.7",
+    "@types/node": "26.6.6",
+    "convex": "1.49.0",
+    "esbuild": "0.28.2",
+    "lefthook": "2.2.2",
+    "oxfmt": "0.76.0",
+    "oxlint": "1.91.0",
+    "oxlint-tsgolint": "7.0.2006",
+    "typescript": "catalog:",
+    "ultracite": "8.1.1",
+    "zod": "4.6.7"
   },
   "engines": {
     "node": ">=22"
   },
+  "packageManager": "bun@1.4.3",
   "mcpName": "io.github.AVGVSTVS96/enclave"
 }

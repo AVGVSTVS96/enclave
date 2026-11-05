@@ -1,8 +1,8 @@
-import rateLimiter from "@convex-dev/rate-limiter/convex.config.js"
-import { defineApp } from "convex/server"
+import rateLimiter from "@convex-dev/rate-limiter/convex.config.js";
+import { defineApp } from "convex/server";
 
-const app = defineApp()
+const app = defineApp();
 
-app.use(rateLimiter)
+app.use(rateLimiter);
 
-export default app
+export default app;

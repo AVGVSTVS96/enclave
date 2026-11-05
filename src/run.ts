@@ -1,62 +1,84 @@
-import { spawn } from "node:child_process"
-import { StringDecoder } from "node:string_decoder"
-import { Transform, type Writable } from "node:stream"
-import { pipeline } from "node:stream/promises"
+import { spawn } from "node:child_process";
+import type { ChildProcess } from "node:child_process";
+import { once } from "node:events";
+import { Transform } from "node:stream";
+import type { Writable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { StringDecoder } from "node:string_decoder";
 
 export interface Stdio {
-  stdin: "inherit" | "ignore"
-  stdout: Writable
-  stderr: Writable
+  stdin: "inherit" | "ignore";
+  stdout: Writable;
+  stderr: Writable;
 }
 
-const terminal: Stdio = { stdin: "inherit", stdout: process.stdout, stderr: process.stderr }
+const terminal: Stdio = { stdin: "inherit", stdout: process.stdout, stderr: process.stderr };
 
-export async function runWithSecrets(command: string[], secrets: Record<string, string>, stdio = terminal) {
-  const [program, ...args] = command
+const isHighSurrogate = (code: number) => code >= 0xd8_00 && code <= 0xdb_ff;
 
-  if (!program) throw new Error("nothing to run")
-  const child = spawn(program, args, { env: { ...process.env, ...secrets }, stdio: [stdio.stdin, "pipe", "pipe"] })
-
-  const exited = new Promise<number>((resolve, reject) => {
-    child.on("error", reject)
-    child.on("close", (code) => resolve(code ?? 1))
-  })
-
-  await Promise.all([
-    pipeline(child.stdout, redact(secrets), stdio.stdout, { end: false }),
-    pipeline(child.stderr, redact(secrets), stdio.stderr, { end: false }),
-  ])
-
-  return exited
-}
-
-export function redact(secrets: Record<string, string>) {
+export const redact = (secrets: Record<string, string>) => {
   const hidden = Object.entries(secrets)
-    .filter(([, value]) => value)
-    .sort(([, a], [, b]) => b.length - a.length)
+    .filter(([, value]) => value !== "")
+    .toSorted(([, a], [, b]) => b.length - a.length);
 
-  const held = Math.max(0, ...hidden.map(([, value]) => value.length - 1))
+  const held = Math.max(0, ...hidden.map(([, value]) => value.length - 1));
 
-  const hide = (text: string) =>
-    hidden.reduce((text, [name, value]) => text.replaceAll(value, `[hidden ${name}]`), text)
+  const hide = (output: string) => {
+    let shown = output;
 
-  const decoder = new StringDecoder("utf8")
-  let tail = ""
+    for (const [name, value] of hidden) {
+      shown = shown.replaceAll(value, `[hidden ${name}]`);
+    }
+
+    return shown;
+  };
+
+  const decoder = new StringDecoder("utf-8");
+  let tail = "";
 
   return new Transform({
     transform(chunk: Buffer, _encoding, done) {
-      const text = hide(tail + decoder.write(chunk))
-      const end = Math.max(0, text.length - held)
-      const split = isHighSurrogate(text.charCodeAt(end - 1)) ? end - 1 : end
-      tail = text.slice(split)
-      done(null, text.slice(0, split))
+      const output = hide(tail + decoder.write(chunk));
+      const end = Math.max(0, output.length - held);
+      // oxlint-disable-next-line unicorn/prefer-code-point -- a lone high surrogate is what to find, and codePointAt would read it joined to the next character
+      const split = isHighSurrogate(output.charCodeAt(end - 1)) ? end - 1 : end;
+
+      tail = output.slice(split);
+      done(null, output.slice(0, split));
     },
     flush(done) {
-      done(null, hide(tail + decoder.end()))
+      done(null, hide(tail + decoder.end()));
     },
-  })
-}
+  });
+};
 
-function isHighSurrogate(code: number) {
-  return code >= 0xd800 && code <= 0xdbff
-}
+const exitCode = async (child: ChildProcess) => {
+  await once(child, "close");
+
+  return child.exitCode ?? 1;
+};
+
+export const runWithSecrets = async (
+  command: string[],
+  secrets: Record<string, string>,
+  stdio = terminal,
+) => {
+  const [program, ...args] = command;
+
+  if (program === undefined || program === "") {
+    throw new Error("nothing to run");
+  }
+
+  const child = spawn(program, args, {
+    env: { ...process.env, ...secrets },
+    stdio: [stdio.stdin, "pipe", "pipe"],
+  });
+
+  const [code] = await Promise.all([
+    exitCode(child),
+    pipeline(child.stdout, redact(secrets), stdio.stdout, { end: false }),
+    pipeline(child.stderr, redact(secrets), stdio.stderr, { end: false }),
+  ]);
+
+  return code;
+};

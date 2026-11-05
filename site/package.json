@@ -3,23 +3,13 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vp dev",
-    "build": "vp build",
-    "preview": "vp preview"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc"
   },
   "devDependencies": {
-    "typescript": "~6.0.2",
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0",
-    "vite-plus": "1.0.0"
-  },
-  "overrides": {
-    "vite": "npm:@voidzero-dev/vite-plus-core@1.0.0"
-  },
-  "devEngines": {
-    "packageManager": {
-      "name": "bun",
-      "version": "1.4.2",
-      "onFail": "download"
-    }
+    "typescript": "catalog:",
+    "vite": "8.3.6"
   }
 }

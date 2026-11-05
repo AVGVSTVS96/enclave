@@ -1,57 +1,79 @@
-import assert from "node:assert/strict"
-import { PassThrough } from "node:stream"
-import { test } from "node:test"
-import { redact, runWithSecrets } from "../src/run.ts"
+import assert from "node:assert/strict";
+import { once } from "node:events";
+import { PassThrough } from "node:stream";
+import type { Transform } from "node:stream";
+import { test } from "node:test";
 
-async function through(chunks: string[], secrets: Record<string, string>) {
-  const stream = redact(secrets)
-  const out: string[] = []
-  stream.on("data", (chunk) => out.push(String(chunk)))
+import { redact, runWithSecrets } from "../src/run.ts";
 
-  for (const chunk of chunks) stream.write(Buffer.from(chunk))
-  stream.end()
-  await new Promise((resolve) => stream.on("end", resolve))
+const collect = (stream: Transform | PassThrough) => {
+  const out: string[] = [];
 
-  return out.join("")
-}
+  stream.on("data", (chunk: Buffer) => {
+    out.push(String(chunk));
+  });
 
-test("hides a secret even when it's split across chunks", async () => {
-  const secrets = { STRIPE_KEY: "sk_live_4wB7xK9m", PIN: "1234" }
-  const text = "key=sk_live_4wB7xK9m pin=1234 done"
+  return out;
+};
 
-  for (let size = 1; size <= text.length; size++) {
-    const chunks = text.match(new RegExp(`.{1,${size}}`, "gs"))!
-    assert.equal(await through(chunks, secrets), "key=[hidden STRIPE_KEY] pin=[hidden PIN] done")
+const through = async (chunks: string[], secrets: Record<string, string>) => {
+  const stream = redact(secrets);
+  const out = collect(stream);
+  const ended = once(stream, "end");
+
+  for (const chunk of chunks) {
+    stream.write(Buffer.from(chunk));
   }
-})
 
-test("keeps multibyte characters whole across chunk boundaries", async () => {
-  const bytes = Buffer.from("🔑 pässwörd 🔑")
-  const stream = redact({ PASSWORD: "pässwörd" })
-  const out: string[] = []
-  stream.on("data", (chunk) => out.push(String(chunk)))
+  stream.end();
+  await ended;
 
-  for (const byte of bytes) stream.write(Buffer.from([byte]))
-  stream.end()
-  await new Promise((resolve) => stream.on("end", resolve))
-  assert.equal(out.join(""), "🔑 [hidden PASSWORD] 🔑")
-})
+  return out.join("");
+};
 
-test("runs a command with secrets in its environment and hides them in its output", async () => {
-  const stdout = new PassThrough()
-  const stderr = new PassThrough()
-  const out: string[] = []
-  const err: string[] = []
-  stdout.on("data", (chunk) => out.push(String(chunk)))
-  stderr.on("data", (chunk) => err.push(String(chunk)))
+await test("hides a secret even when it's split across chunks", async () => {
+  const secrets = { STRIPE_KEY: "sk_live_4wB7xK9m", PIN: "1234" };
+  const text = "key=sk_live_4wB7xK9m pin=1234 done";
+
+  for (let size = 1; size <= text.length; size += 1) {
+    const chunks = text.match(new RegExp(`.{1,${size}}`, "gsu")) ?? [];
+
+    assert.equal(await through(chunks, secrets), "key=[hidden STRIPE_KEY] pin=[hidden PIN] done");
+  }
+});
+
+await test("keeps multibyte characters whole across chunk boundaries", async () => {
+  const bytes = Buffer.from("🔑 pässwörd 🔑");
+  const stream = redact({ PASSWORD: "pässwörd" });
+  const out = collect(stream);
+  const ended = once(stream, "end");
+
+  for (const byte of bytes) {
+    stream.write(Buffer.from([byte]));
+  }
+
+  stream.end();
+  await ended;
+  assert.equal(out.join(""), "🔑 [hidden PASSWORD] 🔑");
+});
+
+await test("runs a command with secrets in its environment and hides them in its output", async () => {
+  const stdout = new PassThrough();
+  const stderr = new PassThrough();
+  const out = collect(stdout);
+  const err = collect(stderr);
 
   const code = await runWithSecrets(
     ["sh", "-c", 'echo "token is $TOKEN"; echo "$TOKEN" >&2; exit 3'],
     { TOKEN: "hunter2hunter2" },
     { stdin: "ignore", stdout, stderr },
-  )
+  );
 
-  assert.equal(code, 3)
-  assert.equal(out.join(""), "token is [hidden TOKEN]\n")
-  assert.equal(err.join(""), "[hidden TOKEN]\n")
-})
+  assert.equal(code, 3);
+  assert.equal(out.join(""), "token is [hidden TOKEN]\n");
+  assert.equal(err.join(""), "[hidden TOKEN]\n");
+});
+
+await test("a program that isn't there fails the run instead of crashing the process", async () => {
+  await assert.rejects(runWithSecrets(["enclave-test-no-such-program"], {}), /ENOENT/u);
+});
