@@ -14,7 +14,10 @@ fi
 dir=${XDG_DATA_HOME:-$HOME/.local/share}/enclave-extension
 mkdir -p "$dir"
 rm -rf "$dir/extension" && mkdir "$dir/extension"
-cp "$src"/{manifest.json,page.js,bridge.js,worker.js} "$dir/extension/"
+# Node strips the TypeScript types, so the extension installs from a clone with no build step.
+js() { node --no-warnings --input-type=module -e 'import { readFileSync } from "node:fs"; import { stripTypeScriptTypes } from "node:module"; process.stdout.write(stripTypeScriptTypes(readFileSync(process.argv[1], "utf8")))' "$1"; }
+cp "$src/manifest.json" "$dir/extension/"
+for script in page bridge worker; do js "$src/$script.ts" >"$dir/extension/$script.js"; done
 [[ -f $dir/key.pem ]] || openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:2048 -out "$dir/key.pem" 2>/dev/null
 rm -f "$dir/extension.crx"
 
@@ -30,7 +33,7 @@ cat >"$dir/update.xml" <<XML
 </gupdate>
 XML
 
-cp "$src/host.js" "$dir/host.mjs"
+js "$src/host.ts" >"$dir/host.mjs"
 printf '%s\n' "$@" | jq -R . | jq -s '{command: .}' >"$dir/host.json"
 printf '#!/bin/sh\nexec %s %s\n' "$(command -v node)" "$dir/host.mjs" >"$dir/host"
 chmod +x "$dir/host"
