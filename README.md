@@ -346,9 +346,9 @@ The relay is a [Convex](https://convex.dev) app, so self-hosting is a few comman
 
 ```sh
 git clone https://github.com/AVGVSTVS96/enclave && cd enclave
-npm install
-npm run dev -- --once    # sign in to Convex and create your project
-npm run deploy
+bun install
+bun run dev --once       # sign in to Convex and create your project
+bun run deploy
 ```
 
 Then point agents at it with `ENCLAVE_RELAY=https://<your-deployment>.convex.cloud`.
@@ -363,7 +363,7 @@ The page comes in two themes, both following the system's light or dark mode:
 Pick one, and optionally one color, when you deploy:
 
 ```sh
-ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy
+ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e bun run deploy
 ```
 
 `ENCLAVE_COLOR` is ledger's highlight or field's background, and text on it switches between white and ink to stay readable. To make your own theme, copy [`page/themes/ledger.css`](page/themes/ledger.css) and point `ENCLAVE_THEME` at your file. A theme is plain CSS over the page's fixed markup, and any fonts or images it links to get built into the page, which loads nothing from anywhere else.
@@ -371,21 +371,23 @@ ENCLAVE_THEME=field ENCLAVE_COLOR=#ff4a2e npm run deploy
 ## Develop
 
 ```sh
-npm run dev      # builds the page and runs a Convex dev deployment
-npm run check    # typecheck and tests
-npm run build    # bundles the CLI, SDK and types into dist/
+bun install        # the CLI, the site and the brand share one workspace and lockfile
+bun run dev        # builds the page and runs a Convex dev deployment
+bun run check      # lint, format, typecheck and tests
+bun run fix        # oxlint's fixes, then oxfmt
+bun run build      # bundles the CLI, SDK and types into dist/
 npm version 0.3.0  # a release: sets every version, commits and makes the signed tag v0.3.0
 ```
 
 | Path | What's there |
 | --- | --- |
-| `convex/` | The relay: requests, rate limits and two HTTP routes, in 154 lines |
+| `convex/` | The relay: requests, rate limits and two HTTP routes, in 177 lines |
 | `page/` | The page people see and its two themes, built into one HTML file by `scripts/page.ts` |
 | `src/hpke.ts` | The encryption, shared by the page and the agent |
 | `src/vault.ts` | `ask`, `wait`, `get`, `run` and the rest of the SDK |
 | `src/mcp.ts` | The MCP server |
 | `src/passkey.ts` | Signing a passkey sign-in |
-| `extension/` | The Chrome extension that sends passkey requests to `enclave sign` |
+| `extension/` | The Chrome extension that sends passkey requests to `enclave sign`, in TypeScript that `extension/install` strips with Node |
 | `src/proton.ts` | Reading a Proton Pass vault, passkeys included |
 | `skills/enclave/` | The Agent Skill |
 
