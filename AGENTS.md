@@ -32,7 +32,7 @@ A secrets relay for agents: the agent sends a one-time link, the person types a 
 | `get` and `run` never reveal a passkey's key                                           | `test/vault.test.ts`                                     |
 | An armed passkey signs exactly one sign-in                                              | `test/vault.test.ts`                                     |
 | `run` hides secrets in output, split across chunks too                                  | `test/run.test.ts`                                       |
-| No comments, `as`, `any` or non-null `!`                                                | `oxlint.config.ts`                                       |
+| No `as`, `any` or non-null `!`; comments only for a decision or fact the code can't show (one `WHY:` line or a link)                                                | `oxlint.config.ts`                                       |
 
 ## Judgment
 
