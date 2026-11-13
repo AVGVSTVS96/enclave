@@ -259,7 +259,7 @@ export const openVault = ({
     const names = await store.names();
 
     const items = await Promise.all(
-      names.map(async (name) => ({ name, item: (await store.get(name)) ?? {} })),
+      names.map(async (name) => ({ name, item: (await store.get(name).catch(() => ({}))) ?? {} })),
     );
 
     return items

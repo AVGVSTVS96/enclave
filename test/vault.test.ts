@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { generateKeyPairSync } from "node:crypto";
-import { mkdir, mkdtemp, readdir, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { test } from "node:test";
@@ -76,6 +76,21 @@ await test("list finds items by name or by website", async (t) => {
     { name: "Work login", fields: ["email", "password", "urls"] },
   ]);
   assert.deepEqual(await vault.list("nothing-like-this"), []);
+});
+
+await test("an item that can't be opened, like a sync tool's conflict copy, doesn't hide the rest", async (t) => {
+  const { home, vault } = await vaultWith(t, { hex: { token: "x" } });
+  const items = path.join(home, "items");
+  const [file = ""] = await readdir(items);
+  await writeFile(
+    path.join(items, "hex.sync-conflict-1.enclave"),
+    await readFile(path.join(items, file)),
+  );
+
+  assert.deepEqual(await vault.list("hex"), [
+    { name: "hex", fields: ["token"] },
+    { name: "hex.sync-conflict-1", fields: [] },
+  ]);
 });
 
 await test("an armed passkey signs one sign-in, even when two ask at once", async (t) => {
